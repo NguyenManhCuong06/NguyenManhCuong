@@ -71,7 +71,7 @@ function bgLoop(now) {
   g.clearRect(0, 0, bgC.width, bgC.height);
   for (const s of bg.stars) {
     g.globalAlpha = 0.35 + 0.65 * Math.abs(Math.sin(now * s.sp + s.ph));
-    g.fillStyle = "#fff";
+    g.fillStyle = "#fff5e1"; // sao ấm
     g.beginPath();
     g.arc(s.x, s.y, s.r, 0, Math.PI * 2);
     g.fill();
@@ -450,13 +450,14 @@ let candleTotal = 0;
 let cake = null; // { fallback, THREE, group, candles, smokes, smokeTex }
 let micCtx = null, analyser = null, micData = null, micStream = null;
 let micReady = false, micDenied = false, blowHold = 0;
+let micBase = 0, micFrames = 0; // hiệu chỉnh ngưỡng theo tiếng ồn nền
 
-// Texture sọc xoắn cho cây nến
-function candleStripeTexture(THREE) {
+// Texture sọc xoắn cho cây nến (đổi màu theo base)
+function candleStripeTexture(THREE, base = "#ff5fa2") {
   const c = document.createElement("canvas");
   c.width = c.height = 64;
   const g = c.getContext("2d");
-  g.fillStyle = "#ff5fa2";
+  g.fillStyle = base;
   g.fillRect(0, 0, 64, 64);
   g.fillStyle = "#ffffff";
   for (let i = -64; i < 128; i += 16) {
@@ -585,10 +586,32 @@ function buildCakeScene(THREE, container) {
     group.add(top);
   }
 
+  // Kẹo rắc trang trí trên các tầng bánh
+  const sprinkleColors = [0xffd166, 0xffffff, 0xff8fc7, 0x8e6cf0];
+  const spots = [
+    { y: layers[0].y + layers[0].h, r0: layers[1].r, r1: layers[0].r },
+    { y: layers[1].y + layers[1].h, r0: layers[2].r, r1: layers[1].r },
+    { y: layers[2].y + layers[2].h, r0: 0, r1: layers[2].r },
+  ];
+  for (const spot of spots) {
+    const nSpr = Math.round((spot.r1 - spot.r0) * 14) + 6;
+    for (let i = 0; i < nSpr; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const rr = spot.r0 + Math.random() * Math.max(0.05, spot.r1 - spot.r0);
+      const spr = new THREE.Mesh(
+        new THREE.SphereGeometry(0.035, 8, 8),
+        new THREE.MeshStandardMaterial({ color: sprinkleColors[i % sprinkleColors.length], roughness: 0.3 })
+      );
+      spr.position.set(Math.cos(a) * rr, spot.y + 0.05, Math.sin(a) * rr);
+      group.add(spr);
+    }
+  }
+
   // Nến: số nến theo tuổi, xếp vòng trên mặt bánh (tối đa 12)
   const topY = 2.34;
   const n = Math.max(1, Math.min(CONFIG.age, 12));
-  const stripeTex = candleStripeTexture(THREE);
+  // Nến sọc xoắn, đổi màu theo vòng (xanh / vàng / hồng)
+  const stripeTexs = ["#7cc6fe", "#ffd479", "#ff8fb0"].map((c) => candleStripeTexture(THREE, c));
   const flameTex = new THREE.CanvasTexture(flameTexture());
   const smokeTex = new THREE.CanvasTexture(smokeTexture());
   const candles = [];
@@ -599,7 +622,7 @@ function buildCakeScene(THREE, container) {
     const cz = 0.5 * Math.cos(theta);
     const stick = new THREE.Mesh(
       new THREE.CylinderGeometry(0.045, 0.045, 0.55, 12),
-      new THREE.MeshStandardMaterial({ map: stripeTex, roughness: 0.5 })
+      new THREE.MeshStandardMaterial({ map: stripeTexs[i % stripeTexs.length], roughness: 0.5 })
     );
     stick.position.set(cx, topY + 0.275, cz);
     group.add(stick);
@@ -641,13 +664,32 @@ function buildCakeScene(THREE, container) {
     if (!dragging) return;
     dragging = false;
     setTimeout(() => { autoRotate = true; }, 2500);
-    if (moved < 8) { // coi là bấm → tắt nến bị bấm
+    if (moved < 8) {
       const rect = el.getBoundingClientRect();
       pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
       pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
       raycaster.setFromCamera(pointer, camera);
       const hit = raycaster.intersectObjects(candleMeshes)[0];
-      if (hit && hit.object.userData.candle) extinguishCandle(hit.object.userData.candle);
+      if (hit && hit.object.userData.candle) {
+        extinguishCandle(hit.object.userData.candle); // bấm trúng nến → tắt nến đó
+      } else if (raycaster.intersectObjects(group.children, true)[0]) {
+        // Chạm vào bánh: tắt nến gần nhất và hai nến bên cạnh
+        const v = new THREE.Vector3();
+        let best = -1, bestDist = Infinity;
+        candles.forEach((c, i) => {
+          c.stick.getWorldPosition(v);
+          v.project(camera);
+          const sx = (v.x * 0.5 + 0.5) * rect.width;
+          const sy = (-v.y * 0.5 + 0.5) * rect.height;
+          const d = Math.hypot(sx - (e.clientX - rect.left), sy - (e.clientY - rect.top));
+          if (d < bestDist) { bestDist = d; best = i; }
+        });
+        if (best >= 0) {
+          [best - 1, best, best + 1].forEach((i) => {
+            if (candles[i]) extinguishCandle(candles[i]);
+          });
+        }
+      }
     }
   };
   el.addEventListener("pointerup", endDrag);
@@ -823,10 +865,16 @@ function stopMic() {
   blowHold = 0;
 }
 
-// Đo cường độ âm thanh liên tục, chỉ chạy khi cảnh bánh kem đang hoạt động
+// Đo cường độ âm thanh liên tục, chỉ chạy khi cảnh bánh kem đang hoạt động.
+// Tự hiệu chỉnh ngưỡng theo tiếng ồn nền (30 khung đầu) để thổi chính xác hơn.
 function micLoop() {
   requestAnimationFrame(micLoop);
-  if (!micReady || currentScene !== "scene-cake" || candlesLit === 0) { blowHold = 0; return; }
+  if (!micReady || currentScene !== "scene-cake" || candlesLit === 0) {
+    blowHold = 0;
+    micFrames = 0;
+    micBase = 0;
+    return;
+  }
   analyser.getByteTimeDomainData(micData);
   let sum = 0;
   for (let i = 0; i < micData.length; i++) {
@@ -834,7 +882,12 @@ function micLoop() {
     sum += v * v;
   }
   const rms = Math.sqrt(sum / micData.length);
-  blowHold = rms > 0.16 ? blowHold + 16 : 0; // ngưỡng thổi, giữ 350ms
+  if (micFrames < 30) { // đo tiếng ồn nền ban đầu
+    micBase = Math.max(micBase, rms);
+    micFrames++;
+    return;
+  }
+  blowHold = rms > Math.max(0.1, micBase * 2.5) ? blowHold + 16 : 0; // ngưỡng thổi, giữ 350ms
   if (blowHold > 350) { blowHold = 0; blowAllCandles(); }
 }
 
@@ -844,7 +897,7 @@ async function enterCake(token) {
   $("#btn-mic").style.display = "";
   $("#mic-hint").textContent = micDenied
     ? "Không dùng được micro — hãy bấm vào nến để tắt 💡"
-    : "Thổi nến đi nào! (hoặc bấm vào nến)";
+    : "Thổi nến đi nào! (hoặc chạm vào bánh / nến)";
   await buildCake3d();
   updateCandleUI();
   tryInitMic(); // xin quyền; nếu bị chặn thì nút "Cho phép micro" vẫn hiện

@@ -1,22 +1,23 @@
 # 🎂 Website Chúc Mừng Sinh Nhật
 
-Website sinh nhật single-page, phong cách viral TikTok/Douyin — lung linh, cảm xúc, mượt trên điện thoại. Web tĩnh (không backend), deploy được trên GitHub Pages.
+Website sinh nhật single-page, theme pastel sáng, mobile-first. Web tĩnh (không backend), deploy được trên GitHub Pages.
 
 ## ✨ Tính năng
 
-- Màn hình mở đầu với nền sao lấp lánh + nút "Mở quà" (bắt đầu nhạc)
-- Đếm ngược 3 – 2 – 1 hiệu ứng phóng to rồi mờ dần
-- Hạt sáng bay vào xếp chữ "Happy Birthday" → tên người nhận → tan ra → trái tim đập nhẹ, kèm pháo hoa (Canvas 2D)
-- Bánh kem CSS thuần, số nến theo tuổi; thổi nến bằng micro (Web Audio API) hoặc bấm vào nến (phương án dự phòng); khi tắt nến: khói bay + pháo giấy + dòng "Điều ước của bạn sẽ thành hiện thực"
-- Vòng ảnh 3D xoay quanh trái tim phát sáng (Three.js), kéo/vuốt để xoay, bấm ảnh để phóng to (lightbox)
-- Lời chúc hiện kiểu máy đánh chữ, nền đèn lồng bay nhẹ
-- Thư tay hiện từng dòng + ký tên
-- Nút "Xem lại từ đầu" + credit "Made with ❤️"
-- Hỗ trợ `prefers-reduced-motion`, giới hạn hạt theo thiết bị, nút bấm ≥ 44px, nhạc chỉ phát sau cử động đầu tiên
+- Màn hình mở đầu: hộp quà SVG ngọ nguậy — chạm để mở (nắp hộp bay lên, pháo giấy, bắt đầu nhạc)
+- Hero: tiêu đề gõ chữ máy "Chúc mừng sinh nhật …", bóng bay bay lên, đếm ngược đến sinh nhật tiếp theo (tự ẩn nếu hôm nay là sinh nhật)
+- Bánh kem 3D (Three.js): số nến theo tuổi (tối đa 12), kéo để xoay có quán tính, lửa nhấp nháy, khói bay khi tắt nến
+- Thổi nến bằng micro (Web Audio API, tự hiệu chỉnh ngưỡng theo tiếng ồn nền) hoặc chạm vào nến / bánh; tắt hết nến → pháo giấy + "Điều ước của bạn đã được gửi đi ✨"
+- Không có WebGL → tự động chuyển bánh dự phòng (DOM/CSS)
+- Lời chúc card, timeline kỷ niệm (2 cột xen kẽ trên desktop), thư viện ảnh masonry + lightbox (phóng to, ←/→, Esc)
+- Lá thư viết dần từng dòng trên nền giấy kẻ, nút ✦ bật lời chúc bí mật
+- Easter egg: gõ "love" trên bàn phím → lời chúc bí mật + pháo giấy
+- Nền lấp lánh, nút nhạc góc dưới phải, nút "Phát lại hiệu ứng"
+- Hỗ trợ `prefers-reduced-motion`, lazy-load ảnh, chỉ tải Three.js khi cuộn tới phần bánh kem
 
 ## 🛠 Công nghệ
 
-HTML5, CSS3, JavaScript ES modules; Three.js (vòng ảnh 3D), GSAP (chuyển cảnh), canvas-confetti (pháo giấy) qua CDN; Web Audio API (micro + nhạc nền tự tạo).
+HTML5, CSS3, JavaScript thuần (classic script); Three.js (bánh kem 3D) qua CDN import map, canvas-confetti (pháo giấy) qua CDN; Web Audio API (micro + nhạc nền tự tạo). Không dùng framework, không build step.
 
 ## 📝 Cách thay nội dung
 
@@ -24,31 +25,34 @@ Mở `script.js`, sửa object `CONFIG` ở đầu file:
 
 | Trường | Ý nghĩa |
 |---|---|
-| `recipientName` | Tên người nhận |
-| `birthDate` | Ngày sinh (DD/MM/YYYY) |
-| `age` | Tuổi (số nến, tối đa 12 nến để đẹp trên mobile) |
-| `senderName` | Người gửi (ký tên cuối thư) |
-| `wishes` | 3–5 câu chúc |
-| `letter` | Các dòng thư tay |
-| `images` | Đường dẫn ảnh trong `assets/images/` |
-| `music` | Đường dẫn file mp3, ví dụ `"assets/audio/birthday.mp3"`. Để trống `""` sẽ phát nhạc nền nhẹ tự tạo bằng Web Audio |
+| `name` | Tên người nhận (hiện ở tiêu đề chính) |
+| `nickname` | Tên gọi thân mật |
+| `sender` | Người gửi (ký tên cuối thư, credit footer) |
+| `relation` | Quan hệ với người gửi |
+| `birthdayISO` | Ngày sinh (ISO) — tự tính tuổi (số nến) và đếm ngược đến sinh nhật tiếp theo |
+| `birthdayDisplay` | Ngày sinh hiển thị trên badge |
+| `wishes` | Các câu chúc |
+| `memories` | Kỷ niệm (title, date, text, src, alt) |
+| `gallery` | Ảnh thư viện (src, alt, ratio = rộng/cao) |
+| `letter` | Các dòng thư tay (hỗ trợ `{nickname}`) |
+| `secretWish` | Lời chúc bí mật |
+| `audioSrc` | Đường dẫn mp3, ví dụ `"assets/audio/birthday.mp3"`. Để trống `""` sẽ phát "Happy Birthday" tự tạo bằng Web Audio (public domain) |
 
 ## 🖼 Thêm ảnh
 
 1. Đặt ảnh vào thư mục `assets/images/`
 2. Đặt tên **không dấu tiếng Việt, không khoảng trắng** (ví dụ: `anh-di-bien.webp`)
-3. Cập nhật mảng `images` trong `CONFIG` (6–10 ảnh). Ảnh tự động lazy-load; ảnh lỗi sẽ được thay bằng ảnh tạm.
+3. Cập nhật `src` trong `memories` / `gallery` của `CONFIG`. Ảnh tự động lazy-load; để `src: ""` sẽ dùng ảnh placeholder pastel.
 
 ## 🎵 Nhạc nền
 
-Đặt file `.mp3` vào `assets/audio/`, rồi sửa `music: "assets/audio/birthday.mp3"`. Nhạc chỉ phát sau lần chạm đầu tiên (quy định của trình duyệt) và có nút bật/tắt cố định góc trên bên phải.
+Để `audioSrc: ""` (mặc định) sẽ tự chơi giai điệu "Happy Birthday" (public domain) bằng Web Audio. Hoặc đặt file `.mp3` vào `assets/audio/` và sửa `audioSrc: "assets/audio/birthday.mp3"`. Nhạc chỉ phát sau lần chạm đầu tiên (quy định của trình duyệt) và có nút bật/tắt góc dưới phải.
 
 ## 🚀 Deploy lên GitHub Pages
 
 1. Commit toàn bộ mã nguồn và push lên repo GitHub.
-2. Vào repo → **Settings** → **Pages** (mục "Code and automation").
-3. **Source**: chọn *Deploy from a branch*.
-4. **Branch**: `main`, **Folder**: `/ (root)` → **Save**.
-5. Chờ 1–2 phút, trang sẽ có tại `https://<username>.github.io/<ten-repo>/`.
+2. Vào repo → **Settings** → **Pages**.
+3. **Source**: *Deploy from a branch* → **Branch**: `main`, **Folder**: `/ (root)` → **Save**.
+4. Chờ 1–2 phút, trang sẽ có tại `https://<username>.github.io/<ten-repo>/`.
 
-> Mọi đường dẫn trong project là tương đối nên chạy đúng trên GitHub Pages. Nếu mở file `index.html` trực tiếp (double-click) cũng chạy được, trừ ảnh Three.js có thể bị chặn CORS ở một số trình duyệt — nên dùng qua HTTP (GitHub Pages hoặc `npx serve`).
+> Mọi đường dẫn trong project là tương đối. Nên mở qua HTTP (GitHub Pages hoặc `python -m http.server`) thay vì double-click `index.html`, vì Three.js dạng ES module có thể bị chặn CORS khi mở trực tiếp từ file.

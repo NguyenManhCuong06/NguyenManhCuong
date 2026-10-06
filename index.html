@@ -3,122 +3,146 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#0b0620" />
-  <meta name="description" content="Website chúc mừng sinh nhật — lời chúc, ảnh kỷ niệm và nhạc nền lung linh" />
+  <meta name="theme-color" content="#fff3e8" />
+  <meta name="description" content="Website chúc mừng sinh nhật — hộp quà, bánh kem thổi nến, kỷ niệm và thư tay" />
   <title>🎂 Chúc mừng sinh nhật</title>
 
   <!-- Font: viết tay (Great Vibes) + sans hỗ trợ tiếng Việt đầy đủ (Be Vietnam Pro) -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;600;800&family=Great+Vibes&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&family=Great+Vibes&display=swap" rel="stylesheet" />
 
   <link rel="stylesheet" href="style.css" />
 
-  <!-- Thư viện CDN (chọn nhẹ): GSAP chuyển cảnh, canvas-confetti pháo giấy -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
+  <!-- Pháo giấy (canvas-confetti) -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js" defer></script>
-  <!-- Import map để dùng Three.js dạng ES module (vòng ảnh 3D) -->
+  <!-- Import map để dùng Three.js dạng ES module (bánh kem 3D) -->
   <script type="importmap">
     { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
   </script>
 </head>
-<body>
-  <!-- Nền sao lấp lánh chạy suốt các cảnh -->
-  <canvas id="bg-stars" aria-hidden="true"></canvas>
+<body class="locked">
+  <!-- ===== MÀN HÌNH MỞ ĐẦU: HỘP QUÀ ===== -->
+  <div id="intro" class="intro">
+    <p class="intro-kicker">Dành riêng cho <span id="intro-nickname">Loan</span></p>
+    <button id="gift-btn" class="gift-btn" type="button" aria-label="Chạm để mở quà">
+      <span class="gift-wiggle">
+        <svg class="gift-svg" viewBox="0 0 200 200" aria-hidden="true">
+          <rect x="30" y="90" width="140" height="95" rx="10" fill="#fff" />
+          <rect x="30" y="90" width="140" height="95" rx="10" fill="#d93f6e" fill-opacity=".92" />
+          <rect x="92" y="90" width="16" height="95" fill="#ffd6e0" />
+          <g class="gift-lid">
+            <rect x="22" y="62" width="156" height="36" rx="10" fill="#b79be8" />
+            <rect x="92" y="62" width="16" height="36" fill="#ffd6e0" />
+            <path d="M100 62 C70 20 40 40 70 58 Z" fill="#f2c25c" />
+            <path d="M100 62 C130 20 160 40 130 58 Z" fill="#f2c25c" />
+            <circle cx="100" cy="60" r="9" fill="#e8a93b" />
+          </g>
+        </svg>
+      </span>
+      <span class="intro-cta">Chạm để mở quà</span>
+    </button>
+  </div>
 
-  <!-- Nút bật/tắt nhạc nền (cố định, tối thiểu 44px) -->
+  <main id="main">
+    <!-- ===== HERO ===== -->
+    <section class="hero">
+      <div class="hero-balloons" id="hero-balloons" aria-hidden="true"></div>
+      <div class="hero-content">
+        <p class="hero-badge">🎂 <span id="hero-birthday">07/10/2009</span></p>
+        <h1 class="hero-title"><span id="hero-title-text"></span><span id="hero-caret" class="caret"></span></h1>
+        <p class="hero-sub">Gửi <span id="hero-nickname">Loan</span> — <span id="hero-relation">bạn thân</span> của mình</p>
+        <div id="countdown" class="countdown" hidden>
+          <div class="box"><div class="num" id="cd-d">00</div><div class="lbl">ngày</div></div>
+          <div class="box"><div class="num" id="cd-h">00</div><div class="lbl">giờ</div></div>
+          <div class="box"><div class="num" id="cd-m">00</div><div class="lbl">phút</div></div>
+          <div class="box"><div class="num" id="cd-s">00</div><div class="lbl">giây</div></div>
+        </div>
+        <a href="#cake" class="scroll-cue">Cuộn xuống để nhận quà ↓</a>
+      </div>
+    </section>
+
+    <!-- ===== BÁNH KEM & THỔI NẾN ===== -->
+    <section id="cake" class="section">
+      <div class="title-wrap reveal">
+        <p class="eyebrow">Điều ước</p>
+        <h2 class="title">Hãy ước một điều ước</h2>
+      </div>
+      <div class="reveal">
+        <div class="cake-wrap">
+          <div id="cake-3d" class="cake-3d"></div>
+        </div>
+        <p id="mic-hint" class="hint" aria-live="polite"></p>
+        <p id="candle-count" class="candle-count"></p>
+        <div class="center-row">
+          <button id="btn-mic" class="btn-soft" type="button">🎤 Thổi bằng micro</button>
+          <button id="btn-relight" class="btn-soft" type="button" hidden>🔥 Thắp lại nến</button>
+        </div>
+        <p id="wish-reveal" class="wish-reveal"></p>
+      </div>
+    </section>
+
+    <!-- ===== LỜI CHÚC ===== -->
+    <section class="section">
+      <div class="title-wrap reveal">
+        <p class="eyebrow">Lời chúc</p>
+        <h2 class="title">Từ trái tim mình</h2>
+      </div>
+      <div class="wish-card reveal">
+        <p class="wish-greet" id="wish-greet">Gửi Loan,</p>
+        <div id="wishes-list"></div>
+        <p class="wish-sign" id="wish-sign"></p>
+      </div>
+    </section>
+
+    <!-- ===== TIMELINE KỶ NIỆM ===== -->
+    <section class="section">
+      <div class="title-wrap reveal">
+        <p class="eyebrow">Kỷ niệm</p>
+        <h2 class="title">Những ngày mình đã đi qua</h2>
+      </div>
+      <ol class="timeline" id="timeline"></ol>
+    </section>
+
+    <!-- ===== THƯ VIỆN ẢNH ===== -->
+    <section class="section">
+      <div class="title-wrap reveal">
+        <p class="eyebrow">Thư viện</p>
+        <h2 class="title">Khoảnh khắc đáng nhớ</h2>
+      </div>
+      <div class="gallery-masonry" id="gallery-masonry"></div>
+    </section>
+
+    <!-- ===== LÁ THƯ ===== -->
+    <section class="section">
+      <div class="title-wrap reveal">
+        <p class="eyebrow">Lá thư cuối</p>
+        <h2 class="title">Vài dòng viết tay</h2>
+      </div>
+      <div class="letter-paper reveal" id="letter-paper">
+        <div id="letter-lines"></div>
+        <p class="letter-sign" id="letter-sign"></p>
+        <button id="secret-btn" class="secret-btn" type="button" aria-label="Một điều bí mật">✦</button>
+      </div>
+    </section>
+
+    <!-- ===== FOOTER ===== -->
+    <footer class="footer">
+      <button id="btn-replay" class="replay-btn" type="button">↻ Phát lại hiệu ứng</button>
+      <p class="made">Made with ❤️ by <span id="made-sender"></span></p>
+      <p class="hint">Gợi ý: thử gõ một từ tiếng Anh gồm 4 chữ cái, nghĩa là “yêu”.</p>
+    </footer>
+  </main>
+
+  <!-- Nút nhạc (cố định góc dưới phải) -->
   <button id="music-toggle" class="music-toggle" type="button" aria-label="Bật/tắt nhạc nền" aria-pressed="false" disabled>🔇</button>
 
-  <!-- 1. Màn hình mở đầu -->
-  <section id="scene-intro" class="scene active">
-    <div class="intro-content">
-      <p class="intro-kicker">✨ Có một món quà dành cho ✨</p>
-      <h1 class="intro-name" id="intro-name">TÊN BẠN</h1>
-      <p class="intro-sub" id="intro-date"></p>
-      <button id="btn-open" class="btn-primary" type="button">🎁 Mở quà</button>
-    </div>
-  </section>
-
-  <!-- 2. Đếm ngược 3 - 2 - 1 -->
-  <section id="scene-countdown" class="scene">
-    <div id="countdown-num" class="countdown-num" aria-live="polite">3</div>
-  </section>
-
-  <!-- 3. Hạt sáng + chữ sắc nét + pháo hoa -->
-  <section id="scene-particles" class="scene" data-skip>
-    <canvas id="fx-canvas" aria-hidden="true"></canvas>
-    <div id="fx-text" class="fx-text" aria-live="polite"></div>
-    <svg id="fx-heart" class="fx-heart" viewBox="0 0 32 29" aria-hidden="true">
-      <defs>
-        <linearGradient id="heartGrad" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stop-color="#ffb3d9" />
-          <stop offset="1" stop-color="#ff4fa0" />
-        </linearGradient>
-      </defs>
-      <path d="M16 28 C-6 12 4 -3 16 7 C28 -3 38 12 16 28Z" fill="url(#heartGrad)" />
-    </svg>
-    <p class="scene-hint floating-hint">Bấm để tiếp tục ✨</p>
-  </section>
-
-  <!-- 4. Bánh kem & thổi nến -->
-  <section id="scene-cake" class="scene">
-    <div class="cake-content">
-      <h2 class="scene-title">Thổi nến thôi, <span class="name-accent" id="cake-name">bạn</span>!</h2>
-      <div id="cake-3d" class="cake-3d"></div>
-      <p id="mic-hint" class="hint"></p>
-      <p id="candle-count" class="candle-count"></p>
-      <button id="btn-mic" class="btn-ghost" type="button">🎤 Cho phép micro thổi nến</button>
-      <button id="btn-relight" class="btn-ghost" type="button" hidden>🔥 Thắp lại nến</button>
-      <button id="btn-cake-next" class="btn-ghost" type="button">Bỏ qua →</button>
-      <p id="wish-reveal">✨ Điều ước của bạn sẽ thành hiện thực ✨</p>
-    </div>
-  </section>
-
-  <!-- 5. Vòng ảnh 3D -->
-  <section id="scene-gallery" class="scene">
-    <div class="gallery-content">
-      <h2 class="scene-title">Chúc mừng sinh nhật <span class="name-accent" id="gallery-name">bạn</span></h2>
-      <div id="gallery-scroll" class="gallery-scroll"></div>
-      <div id="gallery-dots" class="gallery-dots" aria-hidden="true"></div>
-      <p class="scene-hint">Vuốt lên / xuống để xem ảnh • Bấm ảnh để phóng to</p>
-      <button id="btn-gallery-next" class="btn-primary" type="button">Tiếp tục →</button>
-    </div>
-  </section>
-
-  <!-- 6. Lời chúc (kiểu máy đánh chữ) -->
-  <section id="scene-wishes" class="scene" data-skip>
-    <div class="lanterns" aria-hidden="true">
-      <span class="lantern" style="left:6%;  bottom:10%; animation-delay:0s"></span>
-      <span class="lantern" style="left:20%; bottom:26%; animation-delay:1.2s"></span>
-      <span class="lantern" style="left:74%; bottom:14%; animation-delay:.6s"></span>
-      <span class="lantern" style="left:88%; bottom:30%; animation-delay:1.8s"></span>
-      <span class="lantern" style="left:44%; bottom:6%;  animation-delay:2.4s"></span>
-      <span class="lantern" style="left:60%; bottom:22%; animation-delay:.9s"></span>
-    </div>
-    <div class="wishes-content">
-      <h2 class="scene-title">Lời chúc dành cho bạn 💌</h2>
-      <div id="wishes-list"></div>
-      <p class="scene-hint">Bấm để tiếp tục</p>
-    </div>
-  </section>
-
-  <!-- 7. Thư tay -->
-  <section id="scene-letter" class="scene" data-skip>
-    <div class="letter-paper">
-      <div id="letter-lines"></div>
-      <p id="letter-signature"></p>
-    </div>
-  </section>
-
-  <!-- 8. Kết -->
-  <section id="scene-end" class="scene">
-    <div class="end-content">
-      <h1 class="end-title">Happy Birthday!</h1>
-      <p class="end-sub">Chúc bạn tuổi mới thật nhiều niềm vui 🎉</p>
-      <button id="btn-replay" class="btn-primary" type="button">⟲ Xem lại từ đầu</button>
-      <p class="end-credit">Made with ❤️ by <span id="end-sender"></span></p>
-    </div>
-  </section>
+  <!-- Lời chúc bí mật (easter egg) -->
+  <div id="secret-toast" class="toast" hidden>
+    <p class="toast-title">Lời chúc bí mật 💌</p>
+    <p class="toast-text" id="secret-text"></p>
+    <button id="toast-close" class="toast-close" type="button">Đóng</button>
+  </div>
 
   <!-- Lightbox phóng to ảnh -->
   <div id="lightbox" class="lightbox" hidden>

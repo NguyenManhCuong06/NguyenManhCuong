@@ -1,21 +1,54 @@
 /* ============================================================
-   WEBSITE CHÚC MỪNG SINH NHẬT 🎂
-   Phong cách viral TikTok/Douyin — tối ưu cho điện thoại.
+   WEBSITE CHÚC MỪNG SINH NHẬT 🎂 — Theme pastel sáng
+   Single-page: hộp quà → hero → bánh kem thổi nến → lời chúc
+   → kỷ niệm → thư viện → lá thư.
    Mọi nội dung cần cá nhân hóa đều nằm trong CONFIG bên dưới.
    ============================================================ */
 
 // ===================== CẤU HÌNH — CHỈNH SỬA TẠI ĐÂY =====================
 const CONFIG = {
-  recipientName: "Trần Thị Hồng Loan",        // Tên người nhận quà
-  birthDate: "07/10/2009",         // Ngày sinh
-  age: 17,                          // Tuổi (số nến tự động theo tuổi, tối đa 12 để đẹp trên mobile)
-  senderName: "Nguyễn Mạnh Cường",       // Người gửi (ký tên cuối thư)
-  wishes: [                         // 3–5 câu chúc (hiện kiểu máy đánh chữ)
-    "Chúc mừng sinh nhật bạn Loan nha ! ",
+  name: "Trần Thị Hồng Loan",      // Tên người nhận (hiện ở tiêu đề chính)
+  nickname: "Loan",                // Tên gọi thân mật
+  sender: "Nguyễn Mạnh Cường",     // Người gửi (ký tên cuối thư)
+  relation: "bạn thân",            // Quan hệ với người gửi
+  birthdayISO: "2009-10-07T00:00:00", // Ngày sinh (để tính đếm ngược & tuổi)
+  birthdayDisplay: "07/10/2009",   // Ngày sinh hiển thị
+  audioSrc: "",                    // Đường dẫn mp3 nhạc nền. Để trống sẽ tự chơi "Happy Birthday" (public domain).
+  wishes: [                        // Lời chúc (hiện trong card)
+    "Chúc mừng sinh nhật bạn Loan nha !",
     "Chúc cho bạn luôn vui vẻ,khỏe mạnh và ngày càng đẹp zai hơn.",
-    "Cảm ơn bạn vì chúng ta đã chơi với nhau được gần 1 năm nà.",
+    "Cảm ơn bạn vì chúng ta đã chơi với nhau được gần 1 năm nè.",
   ],
-  letter: [                         // Thư tay ngắn — mỗi phần tử là một dòng
+  memories: [                      // Kỷ niệm (timeline). src để trống sẽ dùng ảnh placeholder.
+    {
+      title: "Lần đầu mình làm bạn",
+      date: "Mùa thu năm đó",
+      text: "Một buổi chiều mưa, hai chiếc ô, và câu chào ngượng ngùng đã mở đầu cho tất cả.",
+      src: "assets/images/photo-1.jpg",
+      alt: "Ảnh kỷ niệm lần đầu gặp nhau",
+    },
+    {
+      title: "Chuyến đi không kế hoạch",
+      date: "Một cuối tuần nọ",
+      text: "Lạc đường cả buổi nhưng lại là chuyến đi mình cười nhiều nhất.",
+      src: "assets/images/photo-2.jpg",
+      alt: "Ảnh chuyến đi chơi cùng nhau",
+    },
+    {
+      title: "Sinh nhật năm ngoái",
+      date: "Một năm trước",
+      text: "Chiếc bánh bị nghiêng, nến cháy lệch, nhưng điều ước thì vẫn thành sự thật.",
+      src: "assets/images/photo-3.jpg",
+      alt: "Ảnh sinh nhật năm ngoái",
+    },
+  ],
+  gallery: [                       // Thư viện ảnh (masonry). ratio = rộng/cao.
+    { src: "assets/images/photo-1.jpg", alt: "Khoảnh khắc 1", ratio: 1.25 },
+    { src: "assets/images/photo-2.jpg", alt: "Khoảnh khắc 2", ratio: 0.8 },
+    { src: "assets/images/photo-3.jpg", alt: "Khoảnh khắc 3", ratio: 1 },
+    { src: "assets/images/photo-4.jpg", alt: "Khoảnh khắc 4", ratio: 0.72 },
+  ],
+  letter: [                        // Thư tay — mỗi phần tử là một dòng
     "Tuổi mới phải trưởng thành hơn nhé,",
     "chúc cô có 1 ngày thật tuyệt vời nha.",
     "Mong cô nhận được nhiều lời chúc từ mọi người xung quanh,",
@@ -23,85 +56,74 @@ const CONFIG = {
     "Bước sang tuổi mới rồi bớt bắt nạt em nha,",
     "chịu khó để ý thằng này 1 tý.",
   ],
-  images: [                         // 6–10 ảnh trong assets/images (tên không dấu, không khoảng trắng)
-    "assets/images/photo-1.jpg",
-    "assets/images/photo-2.jpg",
-    "assets/images/photo-3.jpg",
-    "assets/images/photo-4.jpg",
-  ],
-  music: "",                        // Đường dẫn file mp3, vd: "assets/audio/birthday.mp3". Để trống sẽ tự chơi nhạc "Happy Birthday" (public domain).
+  secretWish:                      // Lời chúc bí mật (easter egg: gõ "love" hoặc bấm ✦)
+    "Bí mật nhỏ: tui rất vui vì đời này có bạn. Chúc bạn tuổi mới thật nhiều nắng, luôn được cười thật nhiều, và nhớ là tui luôn ở đây nha. Yêu bạn nhiều! 💌",
 };
 
-// ===================== TIỆN ÍCH & PHÁT HIỆN THIẾT BỊ =====================
+// ===================== TIỆN ÍCH =====================
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
-// Giới hạn số hạt theo thiết bị để không giật lag trên máy yếu
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const isMobile = matchMedia("(max-width: 768px)").matches;
 const isLowEnd =
   isMobile ||
   (navigator.hardwareConcurrency || 8) <= 4 ||
   (navigator.deviceMemory && navigator.deviceMemory <= 4);
-const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
-const PARTICLE_SCALE = reduceMotion ? 0.35 : isLowEnd ? 0.6 : 1;
 
-// ===================== NỀN SAO LẤP LÁNH (chạy suốt) =====================
-const bgC = $("#bg-stars");
-const bg = { ctx: bgC.getContext("2d"), stars: [], shoot: null, last: 0 };
-
-function initStarfield() {
-  const dpr = Math.min(devicePixelRatio || 1, 2);
-  bgC.width = innerWidth * dpr;
-  bgC.height = innerHeight * dpr;
-  const n = Math.round((reduceMotion ? 40 : isLowEnd ? 90 : 170) * (innerWidth < 768 ? 0.7 : 1));
-  bg.stars = Array.from({ length: n }, () => ({
-    x: Math.random() * bgC.width,
-    y: Math.random() * bgC.height,
-    r: (Math.random() * 1.4 + 0.4) * dpr,
-    ph: Math.random() * Math.PI * 2,
-    sp: Math.random() * 0.002 + 0.0005,
-  }));
+// Sinh nhật tiếp theo (tìm ngày tháng năm nay, nếu qua rồi thì lấy năm sau)
+function nextBirthday() {
+  const b = new Date(CONFIG.birthdayISO);
+  const now = new Date();
+  let t = new Date(now.getFullYear(), b.getMonth(), b.getDate());
+  if (t.getTime() < now.getTime()) t = new Date(now.getFullYear() + 1, b.getMonth(), b.getDate());
+  return t;
+}
+function isBirthdayToday() {
+  const b = new Date(CONFIG.birthdayISO);
+  const now = new Date();
+  return b.getMonth() === now.getMonth() && b.getDate() === now.getDate();
 }
 
-function bgLoop(now) {
-  requestAnimationFrame(bgLoop);
-  if (document.hidden) return; // tiết kiệm pin khi ẩn tab
-  const g = bg.ctx;
-  g.clearRect(0, 0, bgC.width, bgC.height);
-  for (const s of bg.stars) {
-    g.globalAlpha = 0.35 + 0.65 * Math.abs(Math.sin(now * s.sp + s.ph));
-    g.fillStyle = "#fff5e1"; // sao ấm
-    g.beginPath();
-    g.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-    g.fill();
-  }
-  // Sao băng thỉnh thoảng
-  if (!bg.shoot && !reduceMotion && now - bg.last > 5000 + Math.random() * 6000) {
-    bg.last = now;
-    bg.shoot = { x: Math.random() * bgC.width * 0.7, y: Math.random() * bgC.height * 0.3, vx: 9, vy: 4, life: 40 };
-  }
-  if (bg.shoot) {
-    const s = bg.shoot;
-    s.x += s.vx;
-    s.y += s.vy;
-    s.life--;
-    const grad = g.createLinearGradient(s.x, s.y, s.x - s.vx * 8, s.y - s.vy * 8);
-    grad.addColorStop(0, "rgba(255,255,255,.9)");
-    grad.addColorStop(1, "rgba(255,255,255,0)");
-    g.globalAlpha = Math.min(1, s.life / 20);
-    g.strokeStyle = grad;
-    g.lineWidth = 2;
-    g.beginPath();
-    g.moveTo(s.x, s.y);
-    g.lineTo(s.x - s.vx * 8, s.y - s.vy * 8);
-    g.stroke();
-    if (s.life <= 0) bg.shoot = null;
-  }
-  g.globalAlpha = 1;
+// Tuổi sẽ tròn vào sinh nhật tiếp theo → số nến (tối đa 12 để đẹp trên mobile)
+const AGE = nextBirthday().getFullYear() - new Date(CONFIG.birthdayISO).getFullYear();
+const CANDLE_COUNT = Math.max(1, Math.min(AGE, 12));
+
+// Ảnh placeholder khi chưa có ảnh thật (SVG gradient + emoji)
+const PALETTES = [
+  ["#ffb3c7", "#c7a8f5"],
+  ["#ffd3a5", "#fd9db5"],
+  ["#b9e3ff", "#d3b6ff"],
+  ["#ffe6a7", "#ffadc0"],
+];
+const EMOJI = ["🎈", "🌸", "🍰", "✨", "🎀", "🧁", "💌", "🌷"];
+function placeholder(i, w = 800, h = 600) {
+  const [a, b] = PALETTES[i % PALETTES.length];
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs><rect width="100%" height="100%" fill="url(#g)"/><circle cx="${w * 0.8}" cy="${h * 0.2}" r="${h * 0.22}" fill="#fff" fill-opacity=".25"/><circle cx="${w * 0.15}" cy="${h * 0.85}" r="${h * 0.3}" fill="#fff" fill-opacity=".18"/><text x="50%" y="52%" font-size="${Math.min(w, h) * 0.22}" text-anchor="middle" dominant-baseline="middle">${EMOJI[i % EMOJI.length]}</text></svg>`;
+  return "data:image/svg+xml;utf8," + encodeURIComponent(svg);
 }
 
-addEventListener("resize", () => { initStarfield(); sizeFxCanvas(); });
+// ===================== NỀN LẤP LÁNH (DOM bits) =====================
+(function buildSparkles() {
+  const wrap = document.createElement("div");
+  wrap.className = "sparkles";
+  wrap.setAttribute("aria-hidden", "true");
+  const chars = ["✦", "♥", "·", "✧"];
+  const colors = ["#d93f6e", "#b79be8", "#f2c25c"];
+  for (let i = 0; i < 16; i++) {
+    const s = document.createElement("span");
+    s.className = "bit";
+    s.textContent = chars[i % 4];
+    s.style.left = `${(i * 0.618 * 100) % 100}%`;
+    s.style.fontSize = `${10 + ((i * 3) % 14)}px`;
+    s.style.color = colors[i % 3];
+    s.style.setProperty("--d", `${16 + ((i * 7) % 14)}s`);
+    s.style.setProperty("--delay", `${-((i * 5) % 20)}s`);
+    wrap.appendChild(s);
+  }
+  document.body.appendChild(wrap);
+})();
 
 // ===================== NHẠC NỀN (chỉ phát sau cử động đầu tiên) =====================
 const Music = {
@@ -112,23 +134,23 @@ const Music = {
   playing: false,
   // Giai điệu "Happy Birthday" (public domain) — mỗi nốt: [tần số Hz, độ dài beat]
   melody: [
-    [392.00, 0.75], [392.00, 0.25], [440.00, 1], [392.00, 1], [523.25, 1], [493.88, 2],
-    [392.00, 0.75], [392.00, 0.25], [440.00, 1], [392.00, 1], [587.33, 1], [523.25, 2],
-    [392.00, 0.75], [392.00, 0.25], [783.99, 1], [659.25, 1], [523.25, 1], [493.88, 1], [440.00, 2],
+    [392.0, 0.75], [392.0, 0.25], [440.0, 1], [392.0, 1], [523.25, 1], [493.88, 2],
+    [392.0, 0.75], [392.0, 0.25], [440.0, 1], [392.0, 1], [587.33, 1], [523.25, 2],
+    [392.0, 0.75], [392.0, 0.25], [783.99, 1], [659.25, 1], [523.25, 1], [493.88, 1], [440.0, 2],
     [698.46, 0.75], [698.46, 0.25], [659.25, 1], [523.25, 1], [587.33, 1], [523.25, 2],
   ],
-  async start() {
+  start() {
     if (this.playing) return;
-    if (CONFIG.music) {
-      this.el = new Audio(CONFIG.music);
-      this.el.loop = true;
-      this.el.volume = 0.6;
+    if (CONFIG.audioSrc) {
       try {
-        await this.el.play();
+        this.el = this.el || new Audio(CONFIG.audioSrc);
+        this.el.loop = true;
+        this.el.volume = 0.6;
+        const p = this.el.play();
+        if (p && p.catch) p.catch(() => this.startMelody());
         this.playing = true;
       } catch (e) {
-        console.warn("Không phát được file nhạc — chuyển nhạc tự tạo", e);
-        this.startMelody();
+        this.startMelody(); // lỗi file nhạc → chuyển nhạc tự tạo
       }
     } else {
       this.startMelody();
@@ -141,6 +163,7 @@ const Music = {
     } catch (e) {
       return; // thiết bị không hỗ trợ Web Audio
     }
+    this.ctx.resume();
     this.playing = true;
     const BEAT = 0.42; // giây mỗi nốt
     const playNote = () => {
@@ -178,282 +201,275 @@ const Music = {
   },
   stop() {
     this.playing = false;
-    if (this.el) { this.el.pause(); this.el = null; }
-    if (this.timer) { clearTimeout(this.timer); this.timer = null; }
+    clearTimeout(this.timer);
+    if (this.el) this.el.pause();
     updateMusicButton();
   },
 };
 
+const musicBtn = $("#music-toggle");
 function updateMusicButton() {
-  const b = $("#music-toggle");
-  b.textContent = Music.playing ? "🎵" : "🔇";
-  b.classList.toggle("on", Music.playing);
-  b.setAttribute("aria-pressed", String(Music.playing));
+  if (!musicBtn) return;
+  musicBtn.textContent = Music.playing ? "🔊" : "🔇";
+  musicBtn.setAttribute("aria-pressed", String(Music.playing));
+  musicBtn.setAttribute("aria-label", Music.playing ? "Tắt nhạc nền" : "Bật nhạc nền");
 }
-
-$("#music-toggle").addEventListener("click", () => {
-  Music.playing ? Music.stop() : Music.start();
+musicBtn.addEventListener("click", () => {
+  if (Music.playing) Music.stop();
+  else Music.start();
 });
 
-// Bật nút nhạc sau cử động đầu tiên (trình duyệt yêu cầu)
-addEventListener("pointerdown", function unlockMusic() {
-  $("#music-toggle").disabled = false;
-  removeEventListener("pointerdown", unlockMusic);
-});
-
-// ===================== QUẢN LÝ CẢNH =====================
-let currentScene = "";
-let sceneToken = 0; // tăng khi đổi cảnh để huỷ các tác vụ async đang chạy
-const ORDER = [
-  "scene-intro", "scene-countdown", "scene-particles", "scene-cake",
-  "scene-gallery", "scene-wishes", "scene-letter", "scene-end",
-];
-
-const sceneHandlers = {
-  "scene-intro": enterIntro,
-  "scene-countdown": runCountdown,
-  "scene-particles": startParticles,
-  "scene-cake": enterCake,
-  "scene-gallery": enterGallery,
-  "scene-wishes": playWishes,
-  "scene-letter": playLetter,
-  "scene-end": enterEnd,
-};
-
-function goToScene(id) {
-  if (currentScene === id) return;
-  currentScene = id;
-  sceneToken++;
-  $$(".scene").forEach((s) => s.classList.toggle("active", s.id === id));
-  // Dọn dẹp tài nguyên khi rời cảnh
-  if (id !== "scene-particles") stopFx();
-  if (id !== "scene-cake") stopMic();
-  const handler = sceneHandlers[id];
-  if (handler) handler(sceneToken);
+// ===================== PHÁO GIẤY (canvas-confetti) =====================
+const CONFETTI_COLORS = ["#d93f6e", "#b79be8", "#f2c25c", "#ffbf9b", "#7cc6fe", "#ffffff"];
+function fireConfetti(x = 0.5, y = 0.5, count = 90) {
+  if (!window.confetti || reduceMotion) return;
+  confetti({ particleCount: count, spread: 75, origin: { x, y }, colors: CONFETTI_COLORS });
 }
 
-// Bấm vào cảnh có data-skip để qua cảnh tiếp (không tính nút bấm)
-document.addEventListener("click", (e) => {
-  const scene = e.target.closest(".scene[data-skip]");
-  if (!scene || e.target.closest("button") || e.target.closest("a")) return;
-  const next = ORDER[ORDER.indexOf(scene.id) + 1];
-  if (next) goToScene(next);
-});
-
-// ===================== 1. MỞ ĐẦU =====================
-function enterIntro() {
-  if (window.gsap && !reduceMotion) {
-    gsap.from(".intro-content > *", { y: 30, opacity: 0, stagger: 0.18, duration: 0.9, ease: "power2.out" });
+// ===================== GÕ CHỮ (TYPEWRITER) =====================
+let typeTimer = null;
+function startTypewriter() {
+  const el = $("#hero-title-text");
+  const caret = $("#hero-caret");
+  const full = `Chúc mừng sinh nhật ${CONFIG.name}!`;
+  clearInterval(typeTimer);
+  el.textContent = "";
+  caret.style.display = "";
+  if (reduceMotion) {
+    el.textContent = full;
+    caret.style.display = "none";
+    return;
   }
-}
-
-$("#btn-open").addEventListener("click", async () => {
-  await Music.start(); // nhạc chỉ phát sau lần chạm đầu tiên
-  goToScene("scene-countdown");
-});
-
-// ===================== 2. ĐẾM NGƯỢC =====================
-async function runCountdown(token) {
-  const num = $("#countdown-num");
-  for (const n of ["3", "2", "1"]) {
-    if (token !== sceneToken) return;
-    num.textContent = n;
-    num.classList.remove("pop");
-    void num.offsetWidth; // khởi động lại animation
-    num.classList.add("pop");
-    await wait(reduceMotion ? 250 : 900);
-  }
-  if (token !== sceneToken) return;
-  goToScene("scene-particles");
-}
-
-// ===================== 3. HẠT XẾP CHỮ + PHÁO HOA (Canvas 2D) =====================
-const fxC = $("#fx-canvas");
-const fx = {
-  ctx: fxC.getContext("2d"),
-  parts: [], sparks: [], rockets: [],
-  running: false, heartMode: false, lastLaunch: 0,
-};
-
-function sizeFxCanvas() {
-  if (!fxC.offsetParent && currentScene !== "scene-particles") return;
-  const dpr = Math.min(devicePixelRatio || 1, isMobile ? 1.5 : 2);
-  fxC.width = innerWidth * dpr;
-  fxC.height = innerHeight * dpr;
-}
-
-// Tạo sprite chấm phát sáng sẵn để vẽ nhanh (tránh shadowBlur nặng)
-const SPRITES = {};
-function dotSprite(color) {
-  if (SPRITES[color]) return SPRITES[color];
-  const c = document.createElement("canvas");
-  c.width = c.height = 32;
-  const g = c.getContext("2d");
-  const grad = g.createRadialGradient(16, 16, 0, 16, 16, 16);
-  grad.addColorStop(0, "rgba(255,255,255,.95)");
-  grad.addColorStop(0.25, color);
-  grad.addColorStop(1, "rgba(0,0,0,0)");
-  g.fillStyle = grad;
-  g.fillRect(0, 0, 32, 32);
-  return (SPRITES[color] = c);
-}
-const COLORS = ["#ffd166", "#ff5fa2", "#ffffff", "#c9bde6"];
-
-function launchRocket() {
-  const dpr = fxC.width / innerWidth;
-  const x = Math.random() * fxC.width;
-  const y = fxC.height * 0.95;
-  const peak = fxC.height * (0.15 + Math.random() * 0.35);
-  fx.rockets.push({ x, y, vy: -Math.sqrt(2 * 0.05 * dpr * (y - peak)), peak, g: 0.05 * dpr });
-}
-
-function explode(r) {
-  const dpr = fxC.width / innerWidth;
-  const n = Math.round((isLowEnd ? 40 : 80) * PARTICLE_SCALE);
-  const sprite = dotSprite(COLORS[(Math.random() * COLORS.length) | 0]);
-  for (let i = 0; i < n; i++) {
-    const a = Math.random() * Math.PI * 2;
-    const sp = (Math.random() * 3 + 1.2) * dpr;
-    fx.sparks.push({
-      x: r.x, y: r.y,
-      vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
-      g: 0.045 * dpr,
-      life: 50 + Math.random() * 40, maxLife: 90,
-      size: 2.5 + Math.random() * 2, sprite,
-    });
-  }
-}
-
-function updateFireworks(g, now) {
-  const dpr = fxC.width / innerWidth;
-  if (now - fx.lastLaunch > (isLowEnd ? 1100 : 750)) {
-    fx.lastLaunch = now;
-    launchRocket();
-  }
-  for (let i = fx.rockets.length - 1; i >= 0; i--) {
-    const r = fx.rockets[i];
-    r.y += r.vy;
-    r.vy += r.g;
-    g.globalAlpha = 1;
-    g.drawImage(dotSprite("#ffffff"), r.x - 3 * dpr, r.y - 3 * dpr, 6 * dpr, 6 * dpr);
-    if (r.vy >= -0.5 || r.y <= r.peak) { explode(r); fx.rockets.splice(i, 1); }
-  }
-  const maxSparks = Math.round((isLowEnd ? 260 : 520) * PARTICLE_SCALE);
-  for (let i = fx.sparks.length - 1; i >= 0; i--) {
-    const s = fx.sparks[i];
-    s.x += s.vx;
-    s.y += s.vy;
-    s.vy += s.g;
-    s.vx *= 0.985;
-    s.life--;
-    if (s.life <= 0 || fx.sparks.length > maxSparks * 1.2) { fx.sparks.splice(i, 1); continue; }
-    g.globalAlpha = Math.max(0, s.life / s.maxLife);
-    const r = s.size * dpr;
-    g.drawImage(s.sprite, s.x - r, s.y - r, r * 2, r * 2);
-  }
-  g.globalAlpha = 1;
-}
-
-function fxLoop(now) {
-  if (!fx.running) return;
-  requestAnimationFrame(fxLoop);
-  const g = fx.ctx;
-  const dpr = fxC.width / innerWidth;
-  g.clearRect(0, 0, fxC.width, fxC.height);
-  updateFireworks(g, now);
-  // Chế độ cộng sáng: hạt glow như đèn neon
-  g.globalCompositeOperation = "lighter";
-  const cx = fxC.width / 2, cy = fxC.height * 0.46;
-  for (const p of fx.parts) {
-    if (fx.heartMode) {
-      // Hạt quay quanh trái tim
-      p.angle += p.orbit;
-      const r = p.radius + Math.sin(now * 0.001 + p.phase) * 14;
-      p.x = cx + Math.cos(p.angle) * r;
-      p.y = cy + Math.sin(p.angle) * r * 0.82;
-    } else {
-      // Hạt trôi nhẹ tại chỗ
-      p.x = p.baseX + Math.sin(now * p.drift + p.phase) * p.amp;
-      p.y = p.baseY + Math.cos(now * p.drift * 0.8 + p.phase) * p.amp;
+  let i = 0;
+  typeTimer = setInterval(() => {
+    el.textContent = full.slice(0, ++i);
+    if (i >= full.length) {
+      clearInterval(typeTimer);
+      caret.style.display = "none";
     }
-    const tw = 0.7 + 0.3 * Math.sin(now * 0.005 + p.phase);
-    const r = p.size * dpr;
-    g.globalAlpha = tw * 0.25; // vầng hào quang nhỏ
-    g.drawImage(p.sprite, p.x - r * 2, p.y - r * 2, r * 4, r * 4);
-    g.globalAlpha = tw; // lõi hình khối vuông sáng rõ
-    g.fillStyle = p.color;
-    g.fillRect(p.x - r, p.y - r, r * 2, r * 2);
-  }
-  g.globalAlpha = 1;
-  g.globalCompositeOperation = "source-over";
+  }, 75);
 }
 
-function stopFx() {
-  fx.running = false;
-  fx.heartMode = false;
-  fxC.style.transform = "";
-  $("#fx-text").classList.remove("show");
-  $("#fx-heart").classList.remove("show");
+// ===================== ĐẾM NGƯỢC =====================
+function tickCountdown() {
+  const cd = $("#countdown");
+  if (isBirthdayToday()) { cd.hidden = true; return; }
+  const diff = nextBirthday().getTime() - Date.now();
+  if (diff <= 0) { cd.hidden = true; return; }
+  cd.hidden = false;
+  const s = Math.floor(diff / 1000);
+  $("#cd-d").textContent = String(Math.floor(s / 86400)).padStart(2, "0");
+  $("#cd-h").textContent = String(Math.floor((s % 86400) / 3600)).padStart(2, "0");
+  $("#cd-m").textContent = String(Math.floor((s % 3600) / 60)).padStart(2, "0");
+  $("#cd-s").textContent = String(s % 60).padStart(2, "0");
 }
+tickCountdown();
+setInterval(tickCountdown, 1000);
 
-async function startParticles(token) {
-  await document.fonts.ready; // đợi font viết tay để chữ DOM hiển thị đúng
-  sizeFxCanvas();
-  // Hạt nền lung linh (trôi nhẹ, không xếp chữ → luôn rõ nét)
-  const count = Math.round((isMobile ? 800 : 1500) * PARTICLE_SCALE);
-  fx.parts = Array.from({ length: count }, () => {
-    const color = COLORS[(Math.random() * COLORS.length) | 0];
-    return {
-      baseX: Math.random() * fxC.width,
-      baseY: Math.random() * fxC.height,
-      x: 0, y: 0,
-      amp: 20 + Math.random() * 40,
-      angle: Math.random() * Math.PI * 2,
-      radius: 50 + Math.random() * Math.min(fxC.width, fxC.height) * 0.32,
-      drift: 0.0004 + Math.random() * 0.0008,
-      orbit: (0.002 + Math.random() * 0.004) * (Math.random() < 0.5 ? 1 : -1),
-      phase: Math.random() * Math.PI * 2,
-      size: 2 + Math.random() * 2.5,
-      color,
-      sprite: dotSprite(color),
-    };
+// ===================== CUỘN TỚI HIỆN NỘI DUNG =====================
+const revealIO = new IntersectionObserver(
+  (entries) => {
+    for (const e of entries) {
+      if (e.isIntersecting) {
+        e.target.classList.add("in");
+        revealIO.unobserve(e.target);
+      }
+    }
+  },
+  { threshold: 0.15 }
+);
+$$(".reveal").forEach((el) => revealIO.observe(el));
+
+// ===================== BÓNG BAY (HERO) =====================
+function buildBalloons() {
+  const wrap = $("#hero-balloons");
+  if (wrap.childElementCount) return;
+  const colors = ["#ff8fb0", "#b79be8", "#f2c25c", "#7cc6fe", "#ffbf9b", "#d93f6e", "#c9b6f5", "#ff9cc2"];
+  colors.forEach((c, i) => {
+    const b = document.createElement("span");
+    b.className = "balloon";
+    b.setAttribute("aria-hidden", "true");
+    b.style.left = `${6 + i * 12}%`;
+    b.style.setProperty("--c", c);
+    b.style.setProperty("--d", `${11 + (i % 4) * 2.5}s`);
+    b.style.setProperty("--delay", `${-(i * 2.3)}s`);
+    wrap.appendChild(b);
   });
-  fx.sparks = [];
-  fx.rockets = [];
-  fx.running = true;
-  fx.heartMode = false;
-  fx.lastLaunch = 0;
-  requestAnimationFrame(fxLoop);
-
-  const textEl = $("#fx-text");
-  const heartEl = $("#fx-heart");
-  // Giai đoạn 1: chữ "Happy Birthday" (DOM nên sắc nét tuyệt đối)
-  textEl.textContent = "Happy Birthday";
-  textEl.classList.add("show");
-  await wait(3200); if (token !== sceneToken) return;
-  // Giai đoạn 2: tên người nhận
-  textEl.textContent = CONFIG.recipientName;
-  await wait(3400); if (token !== sceneToken) return;
-  // Giai đoạn 3: trái tim đập, hạt sáng quay quanh
-  textEl.classList.remove("show");
-  heartEl.classList.add("show");
-  fx.heartMode = true;
-  await wait(5400); if (token !== sceneToken) return;
-  fx.heartMode = false;
-  stopFx();
-  goToScene("scene-cake");
 }
 
-// ===================== 4. BÁNH KEM 3D & THỔI NẾN =====================
+// ===================== MỞ HỘP QUÀ =====================
+let opened = false;
+function openGift() {
+  if (opened) return;
+  opened = true;
+  document.body.classList.remove("locked");
+  $("#intro").classList.add("gift-open");
+  Music.start();
+  musicBtn.disabled = false;
+  fireConfetti(0.5, 0.55, 120);
+  setTimeout(() => fireConfetti(0.2, 0.4, 70), 900);
+  setTimeout(() => fireConfetti(0.8, 0.4, 70), 900);
+  startTypewriter();
+  buildBalloons();
+  setTimeout(() => $("#intro").classList.add("gone"), 1400);
+}
+$("#gift-btn").addEventListener("click", openGift);
+
+// ===================== ĐIỀN NỘI DUNG TỪ CONFIG =====================
+$("#intro-nickname").textContent = CONFIG.nickname;
+$("#hero-birthday").textContent = CONFIG.birthdayDisplay;
+$("#hero-nickname").textContent = CONFIG.nickname;
+$("#hero-relation").textContent = CONFIG.relation;
+$("#made-sender").textContent = CONFIG.sender;
+// Khả năng đọc cho screen reader khi đang gõ chữ
+const heroTitle = $(".hero-title");
+heroTitle.setAttribute("aria-label", `Chúc mừng sinh nhật ${CONFIG.name}!`);
+$("#hero-title-text").setAttribute("aria-hidden", "true");
+$("#hero-caret").setAttribute("aria-hidden", "true");
+
+// ===================== LỜI CHÚC =====================
+(function renderWishes() {
+  $("#wish-greet").textContent = `Gửi ${CONFIG.nickname},`;
+  const list = $("#wishes-list");
+  CONFIG.wishes.forEach((w) => {
+    const p = document.createElement("p");
+    p.textContent = w;
+    list.appendChild(p);
+  });
+  $("#wish-sign").textContent = `— ${CONFIG.sender}`;
+})();
+
+// ===================== TIMELINE KỶ NIỆM =====================
+(function renderTimeline() {
+  const ol = $("#timeline");
+  CONFIG.memories.forEach((m, i) => {
+    const li = document.createElement("li");
+    li.className = "mem-item";
+    const dot = document.createElement("span");
+    dot.className = "mem-dot";
+    dot.setAttribute("aria-hidden", "true");
+    const card = document.createElement("article");
+    card.className = "mem-card reveal";
+    card.style.transitionDelay = `${(i % 2) * 120}ms`;
+    const img = document.createElement("img");
+    img.src = m.src || placeholder(i, 800, 500);
+    img.alt = m.alt;
+    img.loading = "lazy";
+    const body = document.createElement("div");
+    body.className = "mem-body";
+    const date = document.createElement("p");
+    date.className = "mem-date";
+    date.textContent = m.date;
+    const title = document.createElement("h3");
+    title.className = "mem-title";
+    title.textContent = m.title;
+    const text = document.createElement("p");
+    text.className = "mem-text";
+    text.textContent = m.text;
+    body.append(date, title, text);
+    card.append(img, body);
+    li.append(dot, card);
+    ol.appendChild(li);
+    revealIO.observe(card);
+  });
+})();
+
+// ===================== THƯ VIỆN ẢNH + LIGHTBOX =====================
+const photos = CONFIG.gallery.map((g, i) => ({
+  ...g,
+  src: g.src || placeholder(i + 1, 800, Math.round(800 / g.ratio)),
+}));
+
+(function renderGallery() {
+  const wrap = $("#gallery-masonry");
+  photos.forEach((p, i) => {
+    const item = document.createElement("div");
+    item.className = "masonry-item reveal";
+    item.style.transitionDelay = `${(i % 3) * 100}ms`;
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "masonry-btn";
+    btn.setAttribute("aria-label", `Phóng to: ${p.alt}`);
+    const img = document.createElement("img");
+    img.src = p.src;
+    img.alt = p.alt;
+    img.loading = "lazy";
+    img.style.aspectRatio = String(p.ratio);
+    btn.appendChild(img);
+    item.appendChild(btn);
+    wrap.appendChild(item);
+    revealIO.observe(item);
+    btn.addEventListener("click", () => openLightbox(i));
+  });
+})();
+
+let lbIndex = null;
+function openLightbox(i) {
+  lbIndex = i;
+  updateLightbox();
+  $("#lightbox").hidden = false;
+}
+function updateLightbox() {
+  const p = photos[lbIndex];
+  $("#lightbox-img").src = p.src;
+  $("#lightbox-img").alt = p.alt;
+}
+function closeLightbox() {
+  lbIndex = null;
+  $("#lightbox").hidden = true;
+}
+function stepLightbox(d) {
+  if (lbIndex === null) return;
+  lbIndex = (lbIndex + d + photos.length) % photos.length;
+  updateLightbox();
+}
+$("#lb-close").addEventListener("click", closeLightbox);
+$("#lb-prev").addEventListener("click", (e) => { e.stopPropagation(); stepLightbox(-1); });
+$("#lb-next").addEventListener("click", (e) => { e.stopPropagation(); stepLightbox(1); });
+$("#lightbox").addEventListener("click", closeLightbox);
+
+// ===================== LÁ THƯ (viết dần) =====================
+(function renderLetter() {
+  const lines = $("#letter-lines");
+  CONFIG.letter.forEach((line, i) => {
+    const p = document.createElement("p");
+    const span = document.createElement("span");
+    span.className = "write";
+    span.style.transitionDelay = `${i * 1.2}s`;
+    span.textContent = line.replace("{nickname}", CONFIG.nickname);
+    p.appendChild(span);
+    lines.appendChild(p);
+  });
+  const signP = $("#letter-sign");
+  const signSpan = document.createElement("span");
+  signSpan.className = "write";
+  signSpan.style.transitionDelay = `${CONFIG.letter.length * 1.2}s`;
+  signSpan.textContent = `— ${CONFIG.sender}`;
+  signP.appendChild(signSpan);
+})();
+
+const letterIO = new IntersectionObserver(
+  ([e]) => {
+    if (e.isIntersecting) {
+      $("#letter-paper").classList.add("in");
+      letterIO.disconnect();
+    }
+  },
+  { threshold: 0.3 }
+);
+letterIO.observe($("#letter-paper"));
+
+// ===================== BÁNH KEM 3D & THỔI NẾN =====================
 let candlesLit = 0;
 let candleTotal = 0;
 let cake = null; // { fallback, THREE, group, candles, smokes, smokeTex }
 let micCtx = null, analyser = null, micData = null, micStream = null;
 let micReady = false, micDenied = false, blowHold = 0;
 let micBase = 0, micFrames = 0; // hiệu chỉnh ngưỡng theo tiếng ồn nền
+let cakeInited = false, cakeVisible = false;
 
 // Texture sọc xoắn cho cây nến (đổi màu theo base)
-function candleStripeTexture(THREE, base = "#ff5fa2") {
+function candleStripeTexture(THREE, base = "#ff8fb0") {
   const c = document.createElement("canvas");
   c.width = c.height = 64;
   const g = c.getContext("2d");
@@ -540,7 +556,7 @@ function buildCakeScene(THREE, container) {
   const key = new THREE.PointLight(0xffd166, 60, 40);
   key.position.set(3.5, 5, 4);
   scene.add(key);
-  const pinkL = new THREE.PointLight(0xff5fa2, 45, 40);
+  const pinkL = new THREE.PointLight(0xff8fb0, 45, 40);
   pinkL.position.set(-4, 3, 2.5);
   scene.add(pinkL);
   const flameLight = new THREE.PointLight(0xffa040, 0, 10);
@@ -560,9 +576,9 @@ function buildCakeScene(THREE, container) {
 
   // 3 tầng bánh, mỗi tầng kẹp viền kem trắng
   const layers = [
-    { r: 1.78, h: 0.85, y: 0.14, c: 0x8e6cf0 },
-    { r: 1.34, h: 0.72, y: 0.99, c: 0xff5fa2 },
-    { r: 0.94, h: 0.56, y: 1.71, c: 0xffd166 },
+    { r: 1.78, h: 0.85, y: 0.14, c: 0xffd6e0 },
+    { r: 1.34, h: 0.72, y: 0.99, c: 0xffbf9b },
+    { r: 0.94, h: 0.56, y: 1.71, c: 0xe9defc },
   ];
   for (const l of layers) {
     const body = new THREE.Mesh(
@@ -587,7 +603,7 @@ function buildCakeScene(THREE, container) {
   }
 
   // Kẹo rắc trang trí trên các tầng bánh
-  const sprinkleColors = [0xffd166, 0xffffff, 0xff8fc7, 0x8e6cf0];
+  const sprinkleColors = [0xd93f6e, 0xb79be8, 0xf2c25c, 0x7cc6fe];
   const spots = [
     { y: layers[0].y + layers[0].h, r0: layers[1].r, r1: layers[0].r },
     { y: layers[1].y + layers[1].h, r0: layers[2].r, r1: layers[1].r },
@@ -609,7 +625,7 @@ function buildCakeScene(THREE, container) {
 
   // Nến: số nến theo tuổi, xếp vòng trên mặt bánh (tối đa 12)
   const topY = 2.34;
-  const n = Math.max(1, Math.min(CONFIG.age, 12));
+  const n = CANDLE_COUNT;
   // Nến sọc xoắn, đổi màu theo vòng (xanh / vàng / hồng)
   const stripeTexs = ["#7cc6fe", "#ffd479", "#ff8fb0"].map((c) => candleStripeTexture(THREE, c));
   const flameTex = new THREE.CanvasTexture(flameTexture());
@@ -703,11 +719,11 @@ function buildCakeScene(THREE, container) {
     renderer.setSize(w, h);
   });
 
-  // Vòng lặp render: chỉ chạy khi cảnh bánh kem đang hoạt động
+  // Vòng lặp render: chỉ chạy khi phần bánh kem đang hiển thị
   let last = performance.now();
   (function loop(now) {
     requestAnimationFrame(loop);
-    if (currentScene !== "scene-cake" || document.hidden) return;
+    if (!cakeVisible || document.hidden) return;
     const dt = Math.min(50, now - last);
     last = now;
     if (!dragging && autoRotate && !reduceMotion) rotY += dt * 0.00025;
@@ -753,12 +769,14 @@ function buildCakeFallback(container) {
   wrap.appendChild(emoji);
   const row = document.createElement("div");
   row.className = "candle-row";
-  const n = Math.max(1, Math.min(CONFIG.age, 12));
+  const n = CANDLE_COUNT;
+  const stripeColors = ["#7cc6fe", "#ffd479", "#ff8fb0"];
   const candles = [];
   for (let i = 0; i < n; i++) {
     const b = document.createElement("button");
     b.className = "candle";
     b.type = "button";
+    b.style.setProperty("--c", stripeColors[i % stripeColors.length]);
     b.setAttribute("aria-label", `Nến ${i + 1} — bấm để tắt`);
     b.innerHTML = '<span class="smoke"></span><span class="flame"></span><span class="wick"></span><span class="stick"></span>';
     const candle = { dom: b, lit: true, idx: i };
@@ -824,17 +842,15 @@ function celebrate() {
   $("#btn-mic").style.display = "none";
   $("#candle-count").textContent = "";
   $("#btn-relight").hidden = false;
-  $("#wish-reveal").classList.add("show");
+  const wr = $("#wish-reveal");
+  wr.textContent = "Điều ước của bạn đã được gửi đi ✨";
+  wr.classList.add("show");
   stopMic();
   // Pháo giấy nổ (canvas-confetti)
   if (window.confetti && !reduceMotion) {
-    const colors = ["#ff5fa2", "#ffd166", "#ffffff", "#ff8fc7"];
-    confetti({ particleCount: 130, spread: 80, origin: { y: 0.6 }, colors });
-    setTimeout(() => confetti({ particleCount: 70, angle: 60, spread: 60, origin: { x: 0, y: 0.7 }, colors }), 250);
-    setTimeout(() => confetti({ particleCount: 70, angle: 120, spread: 60, origin: { x: 1, y: 0.7 }, colors }), 400);
-  }
-  if (window.gsap && !reduceMotion) {
-    gsap.from("#wish-reveal", { scale: 0.5, opacity: 0, duration: 1, ease: "back.out(2)" });
+    confetti({ particleCount: 130, spread: 80, origin: { y: 0.6 }, colors: CONFETTI_COLORS });
+    setTimeout(() => confetti({ particleCount: 70, angle: 60, spread: 60, origin: { x: 0, y: 0.7 }, colors: CONFETTI_COLORS }), 250);
+    setTimeout(() => confetti({ particleCount: 70, angle: 120, spread: 60, origin: { x: 1, y: 0.7 }, colors: CONFETTI_COLORS }), 400);
   }
 }
 
@@ -844,6 +860,7 @@ async function tryInitMic() {
   try {
     micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
     micCtx = micCtx || new (window.AudioContext || window.webkitAudioContext)();
+    await micCtx.resume();
     const src = micCtx.createMediaStreamSource(micStream);
     analyser = micCtx.createAnalyser();
     analyser.fftSize = 512;
@@ -865,11 +882,11 @@ function stopMic() {
   blowHold = 0;
 }
 
-// Đo cường độ âm thanh liên tục, chỉ chạy khi cảnh bánh kem đang hoạt động.
+// Đo cường độ âm thanh liên tục, chỉ chạy khi phần bánh kem đang hiển thị.
 // Tự hiệu chỉnh ngưỡng theo tiếng ồn nền (30 khung đầu) để thổi chính xác hơn.
 function micLoop() {
   requestAnimationFrame(micLoop);
-  if (!micReady || currentScene !== "scene-cake" || candlesLit === 0) {
+  if (!micReady || !cakeVisible || candlesLit === 0) {
     blowHold = 0;
     micFrames = 0;
     micBase = 0;
@@ -890,20 +907,25 @@ function micLoop() {
   blowHold = rms > Math.max(0.1, micBase * 2.5) ? blowHold + 16 : 0; // ngưỡng thổi, giữ 350ms
   if (blowHold > 350) { blowHold = 0; blowAllCandles(); }
 }
+micLoop();
 
-async function enterCake(token) {
-  $("#wish-reveal").classList.remove("show");
-  $("#btn-relight").hidden = true;
-  $("#btn-mic").style.display = "";
-  $("#mic-hint").textContent = micDenied
-    ? "Không dùng được micro — hãy bấm vào nến để tắt 💡"
-    : "Thổi nến đi nào! (hoặc chạm vào bánh / nến)";
-  await buildCake3d();
-  updateCandleUI();
-  tryInitMic(); // xin quyền; nếu bị chặn thì nút "Cho phép micro" vẫn hiện
-  // Tự động sang cảnh tiếp sau 25s nếu chưa tắt nến
-  wait(25000).then(() => { if (token === sceneToken && candlesLit > 0) goToScene("scene-gallery"); });
-}
+// Khởi tạo phần bánh kem khi cuộn tới (lazy — chỉ tải Three.js khi cần)
+const cakeIO = new IntersectionObserver(
+  ([e]) => {
+    cakeVisible = e.isIntersecting;
+    if (e.isIntersecting && !cakeInited) {
+      cakeInited = true;
+      $("#mic-hint").textContent = micDenied
+        ? "Không dùng được micro — hãy bấm vào nến để tắt 💡"
+        : "Thổi nến đi nào! (hoặc chạm vào bánh / nến)";
+      buildCake3d();
+      updateCandleUI();
+      tryInitMic();
+    }
+  },
+  { threshold: 0.1 }
+);
+cakeIO.observe($("#cake"));
 
 $("#btn-mic").addEventListener("click", tryInitMic);
 $("#btn-relight").addEventListener("click", () => {
@@ -911,207 +933,46 @@ $("#btn-relight").addEventListener("click", () => {
   $("#wish-reveal").classList.remove("show");
   $("#btn-relight").hidden = true;
   $("#btn-mic").style.display = micReady ? "none" : "";
+  $("#mic-hint").textContent = micReady
+    ? "🎤 Đang lắng nghe… hãy thổi thật mạnh để tắt nến!"
+    : "Thổi nến đi nào! (hoặc chạm vào bánh / nến)";
   updateCandleUI();
 });
-$("#btn-cake-next").addEventListener("click", () => goToScene("scene-gallery"));
 
-// ===================== 5. THƯ VIỆN ẢNH CUỘL DỌC =====================
-let galleryInited = false;
-let lbSources = [];
-
-function enterGallery() {
-  if (!galleryInited) {
-    galleryInited = true;
-    buildScrollGallery();
-  }
-}
-
-$("#btn-gallery-next").addEventListener("click", () => goToScene("scene-wishes"));
-
-// Ảnh tạm (SVG data URI) nếu ảnh thật lỗi
-function placeholderSrc(i) {
-  const palettes = [
-    ["#3a2a8c", "#ff74b8"],
-    ["#2a1b6b", "#ffd479"],
-    ["#4b2a9c", "#ff9ccf"],
-    ["#1d1a6b", "#c9b6ff"],
-  ];
-  const emojis = ["🌙", "🎂", "💫", "🎀", "🌸", "✨", "💖", "🎈"];
-  const [a, b] = palettes[i % palettes.length];
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 800"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs><rect width="100%" height="100%" fill="url(#g)"/><circle cx="480" cy="140" r="130" fill="#fff" fill-opacity=".18"/><text x="50%" y="52%" font-size="180" text-anchor="middle" dominant-baseline="middle">${emojis[i % emojis.length]}</text></svg>`;
-  return "data:image/svg+xml;utf8," + encodeURIComponent(svg);
-}
-
-// Gallery cuộn dọc: mỗi ảnh chiếm trọn màn hình, snap khi cuộn
-function buildScrollGallery() {
-  const container = $("#gallery-scroll");
-  const dots = $("#gallery-dots");
-  container.innerHTML = "";
-  dots.innerHTML = "";
-  const sources = CONFIG.images.length ? CONFIG.images : [placeholderSrc(0)];
-  lbSources = sources;
-  let pointerStartScroll = 0;
-
-  sources.forEach((src, i) => {
-    const slide = document.createElement("figure");
-    slide.className = "gslide";
-    const img = document.createElement("img");
-    img.src = src;
-    img.loading = "lazy";
-    img.alt = "Ảnh kỷ niệm " + (i + 1);
-    img.draggable = false;
-    const ph = placeholderSrc(i);
-    img.addEventListener("error", () => { if (!img.src.startsWith("data:")) img.src = ph; });
-    slide.appendChild(img);
-    const cap = document.createElement("figcaption");
-    cap.textContent = (i + 1) + " / " + sources.length;
-    slide.appendChild(cap);
-    // Phân biệt cuộn và bấm: chỉ mở lightbox khi không cuộn
-    slide.addEventListener("pointerdown", () => { pointerStartScroll = container.scrollTop; });
-    slide.addEventListener("click", () => {
-      if (Math.abs(container.scrollTop - pointerStartScroll) < 10) openLightbox(i);
-    });
-    container.appendChild(slide);
-
-    // Chấm tiến trình
-    const dot = document.createElement("button");
-    dot.className = "gdot";
-    dot.type = "button";
-    dot.setAttribute("aria-label", "Ảnh " + (i + 1));
-    dot.addEventListener("click", () => container.scrollTo({ top: slide.offsetTop, behavior: "smooth" }));
-    dots.appendChild(dot);
-  });
-  if (dots.children[0]) dots.children[0].classList.add("on");
-
-  // Cập nhật chấm tiến trình khi cuộn
-  let ticking = false;
-  container.addEventListener("scroll", () => {
-    if (ticking) return;
-    ticking = true;
-    requestAnimationFrame(() => {
-      const first = container.querySelector(".gslide");
-      const slideH = first ? first.offsetHeight : container.clientHeight;
-      const idx = Math.round(container.scrollTop / slideH);
-      [...dots.children].forEach((d, i) => d.classList.toggle("on", i === idx));
-      ticking = false;
-    });
-  });
-}
-
-// ===================== LIGHTBOX =====================
-let lbIndex = 0;
-
-function openLightbox(i) {
-  if (!lbSources.length) return;
-  lbIndex = ((i % lbSources.length) + lbSources.length) % lbSources.length;
-  $("#lightbox-img").src = lbSources[lbIndex];
-  $("#lightbox").hidden = false;
-}
-function closeLightbox() {
-  $("#lightbox").hidden = true;
-  $("#lightbox-img").src = "";
-}
-$("#lb-close").addEventListener("click", closeLightbox);
-$("#lb-prev").addEventListener("click", (e) => { e.stopPropagation(); openLightbox(lbIndex - 1); });
-$("#lb-next").addEventListener("click", (e) => { e.stopPropagation(); openLightbox(lbIndex + 1); });
-$("#lightbox").addEventListener("click", (e) => { if (e.target.id === "lightbox") closeLightbox(); });
-addEventListener("keydown", (e) => {
-  if ($("#lightbox").hidden) return;
-  if (e.key === "Escape") closeLightbox();
-  if (e.key === "ArrowLeft") openLightbox(lbIndex - 1);
-  if (e.key === "ArrowRight") openLightbox(lbIndex + 1);
-});
-
-// ===================== 6. LỜI CHÚC (kiểu máy đánh chữ) =====================
-async function playWishes(token) {
-  const list = $("#wishes-list");
-  if (list.dataset.done) return; // chỉ chơi 1 lần mỗi lượt
-  list.dataset.done = "1";
-  list.innerHTML = "";
-  for (const text of CONFIG.wishes) {
-    if (token !== sceneToken) return;
-    const p = document.createElement("p");
-    p.className = "wish-line";
-    list.appendChild(p);
-    if (reduceMotion) { p.textContent = text; continue; }
-    for (let i = 1; i <= text.length; i++) {
-      if (token !== sceneToken) return;
-      p.textContent = text.slice(0, i);
-      await wait(26);
-    }
-    await wait(450);
-  }
-  await wait(4000);
-  if (token !== sceneToken) return;
-  goToScene("scene-letter");
-}
-
-// ===================== 7. THƯ TAY =====================
-async function playLetter(token) {
-  const box = $("#letter-lines");
-  if (box.dataset.done) return;
-  box.dataset.done = "1";
-  box.innerHTML = "";
-  const sig = $("#letter-signature");
-  sig.textContent = "";
-  sig.classList.remove("write");
-  for (const line of CONFIG.letter) {
-    if (token !== sceneToken) return;
-    const p = document.createElement("p");
-    p.textContent = line;
-    box.appendChild(p);
-    if (!reduceMotion) await wait(950); // hiệu ứng viết từng dòng
-  }
-  sig.textContent = "— " + CONFIG.senderName;
-  sig.classList.add("write");
-  await wait(3500);
-  if (token !== sceneToken) return;
-  goToScene("scene-end");
-}
-
-// ===================== 8. KẾT =====================
-function enterEnd() {
-  if (window.confetti && !reduceMotion) {
-    const colors = ["#ff5fa2", "#ffd166", "#ffffff", "#ff8fc7"];
-    confetti({ particleCount: 130, spread: 80, origin: { y: 0.55 }, colors });
-    setTimeout(() => confetti({ particleCount: 70, angle: 60, spread: 60, origin: { x: 0, y: 0.7 }, colors }), 250);
-    setTimeout(() => confetti({ particleCount: 70, angle: 120, spread: 60, origin: { x: 1, y: 0.7 }, colors }), 400);
-  }
-  if (window.gsap && !reduceMotion) {
-    gsap.from(".end-title", { scale: 0.6, opacity: 0, duration: 1.1, ease: "back.out(1.8)" });
-  }
-}
-
+// ===================== PHÁT LẠI HIỆU ỨNG =====================
 $("#btn-replay").addEventListener("click", () => {
-  // Đặt lại trạng thái để xem lại từ đầu
+  scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" });
+  resetCandles();
   $("#wish-reveal").classList.remove("show");
-  const list = $("#wishes-list");
-  list.innerHTML = "";
-  delete list.dataset.done;
-  const box = $("#letter-lines");
-  box.innerHTML = "";
-  delete box.dataset.done;
-  const sig = $("#letter-signature");
-  sig.textContent = "";
-  sig.classList.remove("write");
-  stopFx();
-  goToScene("scene-intro");
-  scrollTo(0, 0);
+  $("#btn-relight").hidden = true;
+  $("#btn-mic").style.display = micReady ? "none" : "";
+  updateCandleUI();
+  startTypewriter();
+  buildBalloons();
+  fireConfetti(0.5, 0.5, 130);
+  Music.start();
 });
 
-// ===================== KHỞI TẠO =====================
-function init() {
-  // Điền nội dung cá nhân hóa từ CONFIG
-  $("#intro-name").textContent = CONFIG.recipientName;
-  $("#intro-date").textContent = `${CONFIG.birthDate} • ${CONFIG.age} tuổi`;
-  $("#cake-name").textContent = CONFIG.recipientName;
-  $("#gallery-name").textContent = CONFIG.recipientName;
-  $("#end-sender").textContent = CONFIG.senderName;
-  initStarfield();
-  sizeFxCanvas();
-  requestAnimationFrame(bgLoop);
-  requestAnimationFrame(micLoop);
-  goToScene("scene-intro");
+// ===================== LỜI CHÚC BÍ MẬT (EASTER EGG) =====================
+let secretTimer = null;
+function showSecret() {
+  $("#secret-text").textContent = CONFIG.secretWish;
+  $("#secret-toast").hidden = false;
+  fireConfetti(0.5, 0.6, 80);
+  clearTimeout(secretTimer);
+  secretTimer = setTimeout(() => { $("#secret-toast").hidden = true; }, 9000);
 }
+$("#secret-btn").addEventListener("click", showSecret);
+$("#toast-close").addEventListener("click", () => { $("#secret-toast").hidden = true; });
 
-init();
+// Gõ "love" trên bàn phím → lời chúc bí mật; phím tắt lightbox
+let keyBuf = "";
+addEventListener("keydown", (e) => {
+  keyBuf = (keyBuf + e.key.toLowerCase()).slice(-4);
+  if (keyBuf === "love") showSecret();
+  if (lbIndex !== null) {
+    if (e.key === "Escape") closeLightbox();
+    else if (e.key === "ArrowRight") stepLightbox(1);
+    else if (e.key === "ArrowLeft") stepLightbox(-1);
+  }
+});

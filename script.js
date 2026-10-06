@@ -8,7 +8,7 @@
 const CONFIG = {
   recipientName: "Trần Thị Hồng Loan",        // Tên người nhận quà
   birthDate: "07/10/2009",         // Ngày sinh
-  age: 18,                          // Tuổi (số nến tự động theo tuổi, tối đa 12 để đẹp trên mobile)
+  age: 17,                          // Tuổi (số nến tự động theo tuổi, tối đa 12 để đẹp trên mobile)
   senderName: "Nguyễn Mạnh Cường",       // Người gửi (ký tên cuối thư)
   wishes: [                         // 3–5 câu chúc (hiện kiểu máy đánh chữ)
     "Chúc mừng sinh nhật bạn Loan nha ! ",
@@ -299,60 +299,6 @@ function dotSprite(color) {
 }
 const COLORS = ["#ffd166", "#ff5fa2", "#ffffff", "#c9bde6"];
 
-// Lấy toạ độ điểm ảnh của chữ để hạt xếp thành chữ (rõ nét hơn)
-function sampleTextPoints(text, baseSize) {
-  const w = fxC.width, h = fxC.height;
-  const off = document.createElement("canvas");
-  off.width = w;
-  off.height = h;
-  const g = off.getContext("2d");
-  // Tự giảm cỡ chữ cho vừa màn hình
-  let size = baseSize;
-  g.font = `700 ${size}px 'Great Vibes', cursive`; // in đật giả → nét chữ dày, hạt xếp rõ hơn
-  const maxW = w * 0.88;
-  while (g.measureText(text).width > maxW && size > 20) {
-    size -= 4;
-    g.font = `700 ${size}px 'Great Vibes', cursive`;
-  }
-  g.textAlign = "center";
-  g.textBaseline = "middle";
-  g.fillStyle = "#fff";
-  g.fillText(text, w / 2, h / 2 - h * 0.02);
-  const data = g.getImageData(0, 0, w, h).data;
-  const step = Math.max(2, Math.round(size / 40)); // khoảng lấy điểm nhỏ → chữ rõ nét hơn
-  const pts = [];
-  for (let y = 0; y < h; y += step) {
-    for (let x = 0; x < w; x += step) {
-      if (data[(y * w + x) * 4 + 3] > 120) pts.push({ x, y });
-    }
-  }
-  return pts;
-}
-
-// Toạ độ hình trái tim (đường cong tham số)
-function heartPoints(count) {
-  const dpr = fxC.width / innerWidth;
-  const s = Math.min(innerWidth, innerHeight) * 0.028 * dpr;
-  const cx = fxC.width / 2, cy = fxC.height * 0.46;
-  const pts = [];
-  for (let i = 0; i < count; i++) {
-    const t = Math.random() * Math.PI * 2;
-    const x = 16 * Math.pow(Math.sin(t), 3);
-    const y = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t);
-    pts.push({ x: cx + x * s, y: cy - y * s });
-  }
-  return pts;
-}
-
-function setTargets(points) {
-  const n = fx.parts.length;
-  for (let i = 0; i < n; i++) {
-    const p = points[(Math.random() * points.length) | 0];
-    fx.parts[i].tx = p.x;
-    fx.parts[i].ty = p.y;
-  }
-}
-
 function launchRocket() {
   const dpr = fxC.width / innerWidth;
   const x = Math.random() * fxC.width;
@@ -415,49 +361,59 @@ function fxLoop(now) {
   const dpr = fxC.width / innerWidth;
   g.clearRect(0, 0, fxC.width, fxC.height);
   updateFireworks(g, now);
-  // Chế độ cộng sáng: hạt glow như đèn neon, chữ xếp rõ ràng hơn
+  // Chế độ cộng sáng: hạt glow như đèn neon
   g.globalCompositeOperation = "lighter";
+  const cx = fxC.width / 2, cy = fxC.height * 0.46;
   for (const p of fx.parts) {
-    // Hạt bay Ease-out về toạ độ mục tiêu, có chút nhiễu để lung linh
-    p.x += (p.tx - p.x) * 0.075 + (Math.random() - 0.5) * 0.4;
-    p.y += (p.ty - p.y) * 0.075 + (Math.random() - 0.5) * 0.4;
-    const tw = 0.55 + 0.45 * Math.sin(now * 0.004 + p.phase);
+    if (fx.heartMode) {
+      // Hạt quay quanh trái tim
+      p.angle += p.orbit;
+      const r = p.radius + Math.sin(now * 0.001 + p.phase) * 14;
+      p.x = cx + Math.cos(p.angle) * r;
+      p.y = cy + Math.sin(p.angle) * r * 0.82;
+    } else {
+      // Hạt trôi nhẹ tại chỗ
+      p.x = p.baseX + Math.sin(now * p.drift + p.phase) * p.amp;
+      p.y = p.baseY + Math.cos(now * p.drift * 0.8 + p.phase) * p.amp;
+    }
+    const tw = 0.7 + 0.3 * Math.sin(now * 0.005 + p.phase);
     const r = p.size * dpr;
-    g.globalAlpha = tw * 0.16; // vầng hào quang
-    g.drawImage(p.sprite, p.x - r * 3, p.y - r * 3, r * 6, r * 6);
-    g.globalAlpha = tw; // lõi hình khối vuông sáng rõ nét
+    g.globalAlpha = tw * 0.25; // vầng hào quang nhỏ
+    g.drawImage(p.sprite, p.x - r * 2, p.y - r * 2, r * 4, r * 4);
+    g.globalAlpha = tw; // lõi hình khối vuông sáng rõ
     g.fillStyle = p.color;
     g.fillRect(p.x - r, p.y - r, r * 2, r * 2);
   }
   g.globalAlpha = 1;
   g.globalCompositeOperation = "source-over";
-  // Hiệu ứng trái tim đập nhẹ
-  if (fx.heartMode && !reduceMotion) {
-    const beat = 1 + 0.09 * Math.pow(Math.sin(now * 0.005), 2);
-    fxC.style.transform = `scale(${beat})`;
-  } else {
-    fxC.style.transform = "";
-  }
 }
 
 function stopFx() {
   fx.running = false;
   fx.heartMode = false;
   fxC.style.transform = "";
+  $("#fx-text").classList.remove("show");
+  $("#fx-heart").classList.remove("show");
 }
 
 async function startParticles(token) {
-  await document.fonts.ready; // đợi font viết tay để xếp chữ đúng hình
+  await document.fonts.ready; // đợi font viết tay để chữ DOM hiển thị đúng
   sizeFxCanvas();
-  const count = Math.round((isMobile ? 800 : 1500) * PARTICLE_SCALE); // nhiều hạt hơn → chữ rõ nét
+  // Hạt nền lung linh (trôi nhẹ, không xếp chữ → luôn rõ nét)
+  const count = Math.round((isMobile ? 800 : 1500) * PARTICLE_SCALE);
   fx.parts = Array.from({ length: count }, () => {
     const color = COLORS[(Math.random() * COLORS.length) | 0];
     return {
-      x: Math.random() * fxC.width,
-      y: Math.random() * fxC.height,
-      tx: 0, ty: 0,
-      size: 2 + Math.random() * 2.5,
+      baseX: Math.random() * fxC.width,
+      baseY: Math.random() * fxC.height,
+      x: 0, y: 0,
+      amp: 20 + Math.random() * 40,
+      angle: Math.random() * Math.PI * 2,
+      radius: 50 + Math.random() * Math.min(fxC.width, fxC.height) * 0.32,
+      drift: 0.0004 + Math.random() * 0.0008,
+      orbit: (0.002 + Math.random() * 0.004) * (Math.random() < 0.5 ? 1 : -1),
       phase: Math.random() * Math.PI * 2,
+      size: 2 + Math.random() * 2.5,
       color,
       sprite: dotSprite(color),
     };
@@ -469,23 +425,20 @@ async function startParticles(token) {
   fx.lastLaunch = 0;
   requestAnimationFrame(fxLoop);
 
-  const m = Math.min(innerWidth, innerHeight);
-  const titleFont = Math.round(m * 0.16);
-  const nameFont = Math.round(m * 0.13);
-
-  setTargets(sampleTextPoints("Happy Birthday", titleFont));
-  await wait(2600); if (token !== sceneToken) return;
-  setTargets(sampleTextPoints(CONFIG.recipientName, nameFont));
-  await wait(2800); if (token !== sceneToken) return;
-  // Tan ra rồi tụ thành trái tim đập nhẹ
-  for (const p of fx.parts) {
-    p.tx = Math.random() * fxC.width;
-    p.ty = Math.random() * fxC.height;
-  }
-  await wait(900); if (token !== sceneToken) return;
+  const textEl = $("#fx-text");
+  const heartEl = $("#fx-heart");
+  // Giai đoạn 1: chữ "Happy Birthday" (DOM nên sắc nét tuyệt đối)
+  textEl.textContent = "Happy Birthday";
+  textEl.classList.add("show");
+  await wait(3200); if (token !== sceneToken) return;
+  // Giai đoạn 2: tên người nhận
+  textEl.textContent = CONFIG.recipientName;
+  await wait(3400); if (token !== sceneToken) return;
+  // Giai đoạn 3: trái tim đập, hạt sáng quay quanh
+  textEl.classList.remove("show");
+  heartEl.classList.add("show");
   fx.heartMode = true;
-  setTargets(heartPoints(fx.parts.length));
-  await wait(5600); if (token !== sceneToken) return;
+  await wait(5400); if (token !== sceneToken) return;
   fx.heartMode = false;
   stopFx();
   goToScene("scene-cake");
@@ -1109,6 +1062,3 @@ function init() {
 }
 
 init();
-
-// Đánh dấu đã khởi động xong (dùng cho kiểm tra lỗi trong index.html)
-window.__appReady = true;

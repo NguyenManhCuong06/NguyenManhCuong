@@ -44,9 +44,19 @@
     <div id="countdown-num" class="countdown-num" aria-live="polite">3</div>
   </section>
 
-  <!-- 3. Hạt sáng xếp chữ + pháo hoa -->
+  <!-- 3. Hạt sáng + chữ sắc nét + pháo hoa -->
   <section id="scene-particles" class="scene" data-skip>
     <canvas id="fx-canvas" aria-hidden="true"></canvas>
+    <div id="fx-text" class="fx-text" aria-live="polite"></div>
+    <svg id="fx-heart" class="fx-heart" viewBox="0 0 32 29" aria-hidden="true">
+      <defs>
+        <linearGradient id="heartGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#ffb3d9" />
+          <stop offset="1" stop-color="#ff4fa0" />
+        </linearGradient>
+      </defs>
+      <path d="M16 28 C-6 12 4 -3 16 7 C28 -3 38 12 16 28Z" fill="url(#heartGrad)" />
+    </svg>
     <p class="scene-hint floating-hint">Bấm để tiếp tục ✨</p>
   </section>
 
@@ -119,16 +129,5 @@
   </div>
 
   <script src="script.js"></script>
-  <!-- Kiểm tra lỗi: nếu script không chạy được (mở file:// bị chặn module, CDN lỗi...) thì báo hướng dẫn -->
-  <script>
-    window.__appReady = false;
-    setTimeout(function () {
-      if (window.__appReady) return;
-      var banner = document.createElement("div");
-      banner.style.cssText = "position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:999;max-width:92vw;background:rgba(42,22,86,.97);color:#f6f1ff;border:1px solid #ffd166;border-radius:14px;padding:16px 18px;font:14px/1.5 'Be Vietnam Pro',sans-serif;box-shadow:0 0 30px rgba(255,209,102,.4);text-align:center";
-      banner.innerHTML = "⚠️ Trang chưa khởi động được.<br>Hãy mở qua <b>GitHub Pages</b> hoặc chạy server local:<br><code style='color:#ffd166'>npx serve</code> hoặc <code style='color:#ffd166'>python -m http.server</code><br>rồi truy cập <code style='color:#ffd166'>http://localhost:3000</code>";
-      document.body.appendChild(banner);
-    }, 3000);
-  </script>
 </body>
 </html>

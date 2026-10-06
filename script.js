@@ -282,7 +282,7 @@ function sizeFxCanvas() {
   fxC.height = innerHeight * dpr;
 }
 
-// Tạo sprite chấm phát sáng sẵn để vết nhanh (tránh shadowBlur nặng)
+// Tạo sprite chấm phát sáng sẵn để vẽ nhanh (tránh shadowBlur nặng)
 const SPRITES = {};
 function dotSprite(color) {
   if (SPRITES[color]) return SPRITES[color];
@@ -299,7 +299,7 @@ function dotSprite(color) {
 }
 const COLORS = ["#ffd166", "#ff5fa2", "#ffffff", "#c9bde6"];
 
-// Lấy toạ độ điểm ảnh của chữ để hạt xếp thành chữ
+// Lấy toạ độ điểm ảnh của chữ để hạt xếp thành chữ (rõ nét hơn)
 function sampleTextPoints(text, baseSize) {
   const w = fxC.width, h = fxC.height;
   const off = document.createElement("canvas");
@@ -308,18 +308,18 @@ function sampleTextPoints(text, baseSize) {
   const g = off.getContext("2d");
   // Tự giảm cỡ chữ cho vừa màn hình
   let size = baseSize;
-  g.font = `400 ${size}px 'Great Vibes', cursive`;
+  g.font = `700 ${size}px 'Great Vibes', cursive`; // in đật giả → nét chữ dày, hạt xếp rõ hơn
   const maxW = w * 0.88;
   while (g.measureText(text).width > maxW && size > 20) {
     size -= 4;
-    g.font = `400 ${size}px 'Great Vibes', cursive`;
+    g.font = `700 ${size}px 'Great Vibes', cursive`;
   }
   g.textAlign = "center";
   g.textBaseline = "middle";
   g.fillStyle = "#fff";
   g.fillText(text, w / 2, h / 2 - h * 0.02);
   const data = g.getImageData(0, 0, w, h).data;
-  const step = isMobile ? 4 : 3;
+  const step = Math.max(2, Math.round(size / 40)); // khoảng lấy điểm nhỏ → chữ rõ nét hơn
   const pts = [];
   for (let y = 0; y < h; y += step) {
     for (let x = 0; x < w; x += step) {
@@ -415,15 +415,22 @@ function fxLoop(now) {
   const dpr = fxC.width / innerWidth;
   g.clearRect(0, 0, fxC.width, fxC.height);
   updateFireworks(g, now);
+  // Chế độ cộng sáng: hạt glow như đèn neon, chữ xếp rõ ràng hơn
+  g.globalCompositeOperation = "lighter";
   for (const p of fx.parts) {
     // Hạt bay Ease-out về toạ độ mục tiêu, có chút nhiễu để lung linh
     p.x += (p.tx - p.x) * 0.075 + (Math.random() - 0.5) * 0.4;
     p.y += (p.ty - p.y) * 0.075 + (Math.random() - 0.5) * 0.4;
-    g.globalAlpha = 0.55 + 0.45 * Math.sin(now * 0.004 + p.phase);
+    const tw = 0.55 + 0.45 * Math.sin(now * 0.004 + p.phase);
     const r = p.size * dpr;
-    g.drawImage(p.sprite, p.x - r, p.y - r, r * 2, r * 2);
+    g.globalAlpha = tw * 0.16; // vầng hào quang
+    g.drawImage(p.sprite, p.x - r * 3, p.y - r * 3, r * 6, r * 6);
+    g.globalAlpha = tw; // lõi hình khối vuông sáng rõ nét
+    g.fillStyle = p.color;
+    g.fillRect(p.x - r, p.y - r, r * 2, r * 2);
   }
   g.globalAlpha = 1;
+  g.globalCompositeOperation = "source-over";
   // Hiệu ứng trái tim đập nhẹ
   if (fx.heartMode && !reduceMotion) {
     const beat = 1 + 0.09 * Math.pow(Math.sin(now * 0.005), 2);
@@ -442,15 +449,19 @@ function stopFx() {
 async function startParticles(token) {
   await document.fonts.ready; // đợi font viết tay để xếp chữ đúng hình
   sizeFxCanvas();
-  const count = Math.round((isLowEnd ? 380 : 750) * PARTICLE_SCALE);
-  fx.parts = Array.from({ length: count }, () => ({
-    x: Math.random() * fxC.width,
-    y: Math.random() * fxC.height,
-    tx: 0, ty: 0,
-    size: 2 + Math.random() * 2.5,
-    phase: Math.random() * Math.PI * 2,
-    sprite: dotSprite(COLORS[(Math.random() * COLORS.length) | 0]),
-  }));
+  const count = Math.round((isMobile ? 800 : 1500) * PARTICLE_SCALE); // nhiều hạt hơn → chữ rõ nét
+  fx.parts = Array.from({ length: count }, () => {
+    const color = COLORS[(Math.random() * COLORS.length) | 0];
+    return {
+      x: Math.random() * fxC.width,
+      y: Math.random() * fxC.height,
+      tx: 0, ty: 0,
+      size: 2 + Math.random() * 2.5,
+      phase: Math.random() * Math.PI * 2,
+      color,
+      sprite: dotSprite(color),
+    };
+  });
   fx.sparks = [];
   fx.rockets = [];
   fx.running = true;
@@ -480,42 +491,346 @@ async function startParticles(token) {
   goToScene("scene-cake");
 }
 
-// ===================== 4. BÁNH KEM & THỔI NẾN =====================
+// ===================== 4. BÁNH KEM 3D & THỔI NẾN =====================
 let candlesLit = 0;
+let candleTotal = 0;
+let cake = null; // { fallback, THREE, group, candles, smokes, smokeTex }
 let micCtx = null, analyser = null, micData = null, micStream = null;
 let micReady = false, micDenied = false, blowHold = 0;
 
-function buildCandles() {
-  const row = $("#candle-row");
-  row.innerHTML = "";
-  const n = Math.max(1, Math.min(CONFIG.age, 12)); // giới hạn 12 nến để đẹp trên mobile, tối thiểu 1 nến
-  candlesLit = n;
+// Texture sọc xoắn cho cây nến
+function candleStripeTexture(THREE) {
+  const c = document.createElement("canvas");
+  c.width = c.height = 64;
+  const g = c.getContext("2d");
+  g.fillStyle = "#ff5fa2";
+  g.fillRect(0, 0, 64, 64);
+  g.fillStyle = "#ffffff";
+  for (let i = -64; i < 128; i += 16) {
+    g.beginPath();
+    g.moveTo(i, 0);
+    g.lineTo(i + 8, 0);
+    g.lineTo(i + 72, 64);
+    g.lineTo(i + 64, 64);
+    g.closePath();
+    g.fill();
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  return tex;
+}
+
+// Texture ngọn lửa (sprite)
+function flameTexture() {
+  const c = document.createElement("canvas");
+  c.width = c.height = 64;
+  const g = c.getContext("2d");
+  const grad = g.createRadialGradient(32, 42, 2, 32, 32, 30);
+  grad.addColorStop(0, "rgba(255,247,204,1)");
+  grad.addColorStop(0.35, "rgba(255,209,102,0.95)");
+  grad.addColorStop(0.7, "rgba(255,157,92,0.55)");
+  grad.addColorStop(1, "rgba(255,95,162,0)");
+  g.fillStyle = grad;
+  g.fillRect(0, 0, 64, 64);
+  return c;
+}
+
+// Texture khói (sprite)
+function smokeTexture() {
+  const c = document.createElement("canvas");
+  c.width = c.height = 64;
+  const g = c.getContext("2d");
+  const grad = g.createRadialGradient(32, 32, 2, 32, 32, 30);
+  grad.addColorStop(0, "rgba(210,205,230,0.85)");
+  grad.addColorStop(1, "rgba(210,205,230,0)");
+  g.fillStyle = grad;
+  g.fillRect(0, 0, 64, 64);
+  return c;
+}
+
+// Dựng bánh kem 3D (Three.js), lỗi thì dùng bánh DOM dự phòng
+async function buildCake3d() {
+  if (cake) { resetCandles(); return; } // đã có bánh → chỉ cần thắp lại nến
+  const container = $("#cake-3d");
+  container.innerHTML = "";
+  let THREE;
+  try {
+    THREE = await import("three");
+    try {
+      buildCakeScene(THREE, container);
+    } catch (e) {
+      console.warn("WebGL không khả dụng — dùng bánh dự phòng", e);
+      buildCakeFallback(container);
+    }
+  } catch (e) {
+    console.warn("Three.js không tải được — dùng bánh dự phòng", e);
+    buildCakeFallback(container);
+  }
+}
+
+function buildCakeScene(THREE, container) {
+  const W = container.clientWidth || innerWidth;
+  const H = Math.max(300, container.clientHeight || innerHeight * 0.5);
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(45, W / H, 0.1, 100);
+  camera.position.set(0, 2.7, 6.4);
+  camera.lookAt(0, 1.0, 0);
+
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+  renderer.setSize(W, H);
+  container.appendChild(renderer.domElement);
+
+  // Đèn: ánh sáng môi trường + vàng + hồng
+  scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+  const key = new THREE.PointLight(0xffd166, 60, 40);
+  key.position.set(3.5, 5, 4);
+  scene.add(key);
+  const pinkL = new THREE.PointLight(0xff5fa2, 45, 40);
+  pinkL.position.set(-4, 3, 2.5);
+  scene.add(pinkL);
+  const flameLight = new THREE.PointLight(0xffa040, 0, 10);
+  flameLight.position.set(0, 2.7, 0);
+  scene.add(flameLight);
+
+  const group = new THREE.Group();
+  scene.add(group);
+
+  // Đĩa bánh
+  const plate = new THREE.Mesh(
+    new THREE.CylinderGeometry(2.15, 2.3, 0.14, 48),
+    new THREE.MeshStandardMaterial({ color: 0xe8e2f7, roughness: 0.35, metalness: 0.35 })
+  );
+  plate.position.y = 0.07;
+  group.add(plate);
+
+  // 3 tầng bánh, mỗi tầng kẹp viền kem trắng
+  const layers = [
+    { r: 1.78, h: 0.85, y: 0.14, c: 0x8e6cf0 },
+    { r: 1.34, h: 0.72, y: 0.99, c: 0xff5fa2 },
+    { r: 0.94, h: 0.56, y: 1.71, c: 0xffd166 },
+  ];
+  for (const l of layers) {
+    const body = new THREE.Mesh(
+      new THREE.CylinderGeometry(l.r, l.r, l.h, 48),
+      new THREE.MeshStandardMaterial({ color: l.c, roughness: 0.55 })
+    );
+    body.position.y = l.y + l.h / 2;
+    group.add(body);
+    const rim = new THREE.Mesh(
+      new THREE.TorusGeometry(l.r * 0.99, 0.085, 12, 48),
+      new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4 })
+    );
+    rim.rotation.x = Math.PI / 2;
+    rim.position.y = l.y + l.h;
+    group.add(rim);
+    const top = new THREE.Mesh(
+      new THREE.CylinderGeometry(l.r * 0.97, l.r * 0.97, 0.07, 48),
+      new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4 })
+    );
+    top.position.y = l.y + l.h + 0.035;
+    group.add(top);
+  }
+
+  // Nến: số nến theo tuổi, xếp vòng trên mặt bánh (tối đa 12)
+  const topY = 2.34;
+  const n = Math.max(1, Math.min(CONFIG.age, 12));
+  const stripeTex = candleStripeTexture(THREE);
+  const flameTex = new THREE.CanvasTexture(flameTexture());
+  const smokeTex = new THREE.CanvasTexture(smokeTexture());
+  const candles = [];
+  const candleMeshes = [];
+  for (let i = 0; i < n; i++) {
+    const theta = (i / n) * Math.PI * 2;
+    const cx = 0.5 * Math.sin(theta);
+    const cz = 0.5 * Math.cos(theta);
+    const stick = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.045, 0.045, 0.55, 12),
+      new THREE.MeshStandardMaterial({ map: stripeTex, roughness: 0.5 })
+    );
+    stick.position.set(cx, topY + 0.275, cz);
+    group.add(stick);
+    const flame = new THREE.Sprite(new THREE.SpriteMaterial({ map: flameTex, transparent: true, depthWrite: false }));
+    flame.position.set(cx, topY + 0.68, cz);
+    flame.scale.set(0.34, 0.42, 1);
+    group.add(flame);
+    const candle = { stick, flame, lit: true, idx: i };
+    stick.userData.candle = candle;
+    candles.push(candle);
+    candleMeshes.push(stick);
+  }
+  candlesLit = candleTotal = candles.length;
+
+  cake = { fallback: false, THREE, group, candles, smokes: [], smokeTex };
+
+  // Kéo xoay bánh (có quán tính), bấm nến để tắt
+  const raycaster = new THREE.Raycaster();
+  const pointer = new THREE.Vector2();
+  const el = renderer.domElement;
+  let dragging = false, lastX = 0, moved = 0, rotY = 0, vel = 0, autoRotate = true;
+
+  el.addEventListener("pointerdown", (e) => {
+    dragging = true;
+    lastX = e.clientX;
+    moved = 0;
+    autoRotate = false;
+    el.setPointerCapture(e.pointerId);
+  });
+  el.addEventListener("pointermove", (e) => {
+    if (!dragging) return;
+    const dx = e.clientX - lastX;
+    lastX = e.clientX;
+    moved += Math.abs(dx);
+    rotY += dx * 0.008;
+    vel = dx * 0.008;
+  });
+  const endDrag = (e) => {
+    if (!dragging) return;
+    dragging = false;
+    setTimeout(() => { autoRotate = true; }, 2500);
+    if (moved < 8) { // coi là bấm → tắt nến bị bấm
+      const rect = el.getBoundingClientRect();
+      pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+      raycaster.setFromCamera(pointer, camera);
+      const hit = raycaster.intersectObjects(candleMeshes)[0];
+      if (hit && hit.object.userData.candle) extinguishCandle(hit.object.userData.candle);
+    }
+  };
+  el.addEventListener("pointerup", endDrag);
+  el.addEventListener("pointercancel", endDrag);
+
+  addEventListener("resize", () => {
+    const w = container.clientWidth || innerWidth;
+    const h = Math.max(300, container.clientHeight || innerHeight * 0.5);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    renderer.setSize(w, h);
+  });
+
+  // Vòng lặp render: chỉ chạy khi cảnh bánh kem đang hoạt động
+  let last = performance.now();
+  (function loop(now) {
+    requestAnimationFrame(loop);
+    if (currentScene !== "scene-cake" || document.hidden) return;
+    const dt = Math.min(50, now - last);
+    last = now;
+    if (!dragging && autoRotate && !reduceMotion) rotY += dt * 0.00025;
+    if (!dragging && Math.abs(vel) > 0.0001) { rotY += vel; vel *= 0.94; }
+    group.rotation.y = rotY;
+    // Lửa nhấp nháy + ánh sáng ấm theo số nến đang cháy
+    const t = now * 0.012;
+    let lit = 0;
+    for (const c of candles) {
+      if (!c.lit) continue;
+      lit++;
+      const s = 1 + 0.16 * Math.sin(t + c.idx * 1.7);
+      c.flame.scale.set(0.34 * s, 0.42 * (1 + 0.1 * Math.sin(t * 1.3 + c.idx)), 1);
+    }
+    flameLight.intensity = lit * 2.2;
+    // Khói bay lên khi nến tắt
+    for (let i = cake.smokes.length - 1; i >= 0; i--) {
+      const s = cake.smokes[i];
+      s.life++;
+      s.sprite.position.y += 0.018;
+      s.sprite.position.x += Math.sin(s.life * 0.08) * 0.004;
+      const k = 1 - s.life / 110;
+      s.sprite.material.opacity = Math.max(0, k) * 0.7;
+      const sc = 0.3 + s.life * 0.006;
+      s.sprite.scale.set(sc, sc, 1);
+      if (s.life > 110) {
+        group.remove(s.sprite);
+        s.sprite.material.dispose();
+        cake.smokes.splice(i, 1);
+      }
+    }
+    renderer.render(scene, camera);
+  })(performance.now());
+}
+
+// Bánh dự phòng (không có WebGL): emoji bánh + nến DOM
+function buildCakeFallback(container) {
+  const wrap = document.createElement("div");
+  wrap.className = "cake-fallback";
+  const emoji = document.createElement("div");
+  emoji.className = "cake-emoji";
+  emoji.textContent = "🎂";
+  wrap.appendChild(emoji);
+  const row = document.createElement("div");
+  row.className = "candle-row";
+  const n = Math.max(1, Math.min(CONFIG.age, 12));
+  const candles = [];
   for (let i = 0; i < n; i++) {
     const b = document.createElement("button");
     b.className = "candle";
     b.type = "button";
     b.setAttribute("aria-label", `Nến ${i + 1} — bấm để tắt`);
     b.innerHTML = '<span class="smoke"></span><span class="flame"></span><span class="wick"></span><span class="stick"></span>';
-    b.addEventListener("click", () => extinguishCandle(b));
+    const candle = { dom: b, lit: true, idx: i };
+    b.addEventListener("click", () => extinguishCandle(candle));
+    candles.push(candle);
     row.appendChild(b);
   }
+  wrap.appendChild(row);
+  container.appendChild(wrap);
+  candlesLit = candleTotal = candles.length;
+  cake = { fallback: true, candles, smokes: [] };
+}
+
+function resetCandles() {
+  if (!cake) return;
+  for (const c of cake.candles) {
+    c.lit = true;
+    if (cake.fallback) c.dom.classList.remove("out");
+    else c.flame.visible = true;
+  }
+  if (!cake.fallback) {
+    for (const s of cake.smokes) {
+      cake.group.remove(s.sprite);
+      s.sprite.material.dispose();
+    }
+    cake.smokes = [];
+  }
+  candlesLit = candleTotal;
 }
 
 function extinguishCandle(candle) {
-  if (candle.classList.contains("out")) return;
-  candle.classList.add("out"); // khói bay nhờ CSS animation
+  if (!candle || !candle.lit) return;
+  candle.lit = false;
+  if (cake.fallback) {
+    candle.dom.classList.add("out"); // khói bay nhờ CSS animation
+  } else {
+    candle.flame.visible = false;
+    // Tạo khói bay lên
+    const smoke = new cake.THREE.Sprite(new cake.THREE.SpriteMaterial({
+      map: cake.smokeTex, transparent: true, depthWrite: false,
+    }));
+    smoke.position.copy(candle.flame.position);
+    smoke.scale.set(0.3, 0.3, 1);
+    cake.group.add(smoke);
+    cake.smokes.push({ sprite: smoke, life: 0 });
+  }
   candlesLit--;
+  updateCandleUI();
   if (candlesLit === 0) celebrate();
 }
 
 function blowAllCandles() {
-  $$("#candle-row .candle").forEach((c, i) => setTimeout(() => extinguishCandle(c), i * 90));
+  if (!cake) return;
+  cake.candles.forEach((c, i) => setTimeout(() => extinguishCandle(c), i * 90));
+}
+
+function updateCandleUI() {
+  $("#candle-count").textContent = candlesLit > 0 ? `Còn ${candlesLit} ngọn 🕯️` : "";
 }
 
 function celebrate() {
   $("#mic-hint").textContent = "";
   $("#btn-mic").style.display = "none";
+  $("#candle-count").textContent = "";
+  $("#btn-relight").hidden = false;
   $("#wish-reveal").classList.add("show");
+  stopMic();
   // Pháo giấy nổ (canvas-confetti)
   if (window.confetti && !reduceMotion) {
     const colors = ["#ff5fa2", "#ffd166", "#ffffff", "#ff8fc7"];
@@ -570,239 +885,120 @@ function micLoop() {
   if (blowHold > 350) { blowHold = 0; blowAllCandles(); }
 }
 
-function enterCake(token) {
-  buildCandles();
+async function enterCake(token) {
   $("#wish-reveal").classList.remove("show");
+  $("#btn-relight").hidden = true;
   $("#btn-mic").style.display = "";
   $("#mic-hint").textContent = micDenied
     ? "Không dùng được micro — hãy bấm vào nến để tắt 💡"
     : "Thổi nến đi nào! (hoặc bấm vào nến)";
+  await buildCake3d();
+  updateCandleUI();
   tryInitMic(); // xin quyền; nếu bị chặn thì nút "Cho phép micro" vẫn hiện
-  if (token !== sceneToken) return;
   // Tự động sang cảnh tiếp sau 25s nếu chưa tắt nến
   wait(25000).then(() => { if (token === sceneToken && candlesLit > 0) goToScene("scene-gallery"); });
 }
 
 $("#btn-mic").addEventListener("click", tryInitMic);
+$("#btn-relight").addEventListener("click", () => {
+  resetCandles();
+  $("#wish-reveal").classList.remove("show");
+  $("#btn-relight").hidden = true;
+  $("#btn-mic").style.display = micReady ? "none" : "";
+  updateCandleUI();
+});
 $("#btn-cake-next").addEventListener("click", () => goToScene("scene-gallery"));
 
-// ===================== 5. VÒNG ẢNH 3D (Three.js) =====================
+// ===================== 5. THƯ VIỆN ẢNH CUỘL DỌC =====================
 let galleryInited = false;
+let lbSources = [];
 
 function enterGallery() {
   if (!galleryInited) {
     galleryInited = true;
-    initGallery();
+    buildScrollGallery();
   }
 }
 
 $("#btn-gallery-next").addEventListener("click", () => goToScene("scene-wishes"));
 
-async function initGallery() {
-  const container = $("#gallery-3d");
-  const sources = CONFIG.images.length ? CONFIG.images : ["assets/images/photo-1.svg"];
-  let THREE;
-  try {
-    THREE = await import("three");
-    try {
-      buildThreeGallery(THREE, container, sources);
-      return;
-    } catch (e) {
-      console.warn("WebGL không khả dụng — dùng gallery 2D", e);
-    }
-  } catch (e) {
-    console.warn("Three.js không tải được — dùng gallery 2D", e);
-  }
-  build2dGallery(container, sources);
+// Ảnh tạm (SVG data URI) nếu ảnh thật lỗi
+function placeholderSrc(i) {
+  const palettes = [
+    ["#3a2a8c", "#ff74b8"],
+    ["#2a1b6b", "#ffd479"],
+    ["#4b2a9c", "#ff9ccf"],
+    ["#1d1a6b", "#c9b6ff"],
+  ];
+  const emojis = ["🌙", "🎂", "💫", "🎀", "🌸", "✨", "💖", "🎈"];
+  const [a, b] = palettes[i % palettes.length];
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 800"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs><rect width="100%" height="100%" fill="url(#g)"/><circle cx="480" cy="140" r="130" fill="#fff" fill-opacity=".18"/><text x="50%" y="52%" font-size="180" text-anchor="middle" dominant-baseline="middle">${emojis[i % emojis.length]}</text></svg>`;
+  return "data:image/svg+xml;utf8," + encodeURIComponent(svg);
 }
 
-// Ảnh tạm nếu ảnh thật tải lỗi
-function makePlaceholderCanvas(i) {
-  const c = document.createElement("canvas");
-  c.width = 400;
-  c.height = 300;
-  const g = c.getContext("2d");
-  const hue = (i * 47) % 360;
-  const grad = g.createLinearGradient(0, 0, 400, 300);
-  grad.addColorStop(0, `hsl(${hue}, 60%, 30%)`);
-  grad.addColorStop(1, `hsl(${(hue + 60) % 360}, 70%, 55%)`);
-  g.fillStyle = grad;
-  g.fillRect(0, 0, 400, 300);
-  g.fillStyle = "#ffe9a8";
-  g.font = "40px Georgia";
-  g.textAlign = "center";
-  g.fillText("Ảnh " + (i + 1), 200, 160);
-  return c;
-}
+// Gallery cuộn dọc: mỗi ảnh chiếm trọn màn hình, snap khi cuộn
+function buildScrollGallery() {
+  const container = $("#gallery-scroll");
+  const dots = $("#gallery-dots");
+  container.innerHTML = "";
+  dots.innerHTML = "";
+  const sources = CONFIG.images.length ? CONFIG.images : [placeholderSrc(0)];
+  lbSources = sources;
+  let pointerStartScroll = 0;
 
-// Trái tim phát sáng ở chính giữa vòng ảnh
-function makeHeartCanvas() {
-  const c = document.createElement("canvas");
-  c.width = c.height = 256;
-  const g = c.getContext("2d");
-  g.translate(128, 138);
-  g.scale(6, 6);
-  g.beginPath();
-  for (let t = 0; t <= Math.PI * 2 + 0.01; t += 0.05) {
-    const x = 16 * Math.pow(Math.sin(t), 3);
-    const y = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t);
-    if (t === 0) g.moveTo(x, y); else g.lineTo(x, y);
-  }
-  const grad = g.createLinearGradient(0, -20, 0, 20);
-  grad.addColorStop(0, "#ff8fc7");
-  grad.addColorStop(1, "#ff5fa2");
-  g.fillStyle = grad;
-  g.shadowColor = "#ff5fa2";
-  g.shadowBlur = 12;
-  g.fill();
-  return c;
-}
-
-function makeGlowCanvas() {
-  const c = document.createElement("canvas");
-  c.width = c.height = 128;
-  const g = c.getContext("2d");
-  const grad = g.createRadialGradient(64, 64, 0, 64, 64, 64);
-  grad.addColorStop(0, "rgba(255,143,199,.8)");
-  grad.addColorStop(1, "rgba(255,143,199,0)");
-  g.fillStyle = grad;
-  g.fillRect(0, 0, 128, 128);
-  return c;
-}
-
-function buildThreeGallery(THREE, container, sources) {
-  const W = container.clientWidth || innerWidth;
-  const H = container.clientHeight || innerHeight * 0.6;
-  const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(55, W / Math.max(1, H), 0.1, 100);
-  camera.position.set(0, 1.3, 11.5);
-
-  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
-  renderer.setSize(W, H);
-  container.appendChild(renderer.domElement);
-
-  scene.add(new THREE.AmbientLight(0xffffff, 0.7));
-  const pinkLight = new THREE.PointLight(0xff5fa2, 60, 40);
-  pinkLight.position.set(0, 2.4, 2);
-  scene.add(pinkLight);
-  const goldLight = new THREE.PointLight(0xffd166, 40, 40);
-  goldLight.position.set(3, 0, 4);
-  scene.add(goldLight);
-
-  const heart = new THREE.Sprite(new THREE.SpriteMaterial({
-    map: new THREE.CanvasTexture(makeHeartCanvas()), transparent: true, depthWrite: false,
-  }));
-  heart.position.set(0, 2.35, 0);
-  heart.scale.set(2.4, 2.4, 1);
-  scene.add(heart);
-  const halo = new THREE.Sprite(new THREE.SpriteMaterial({
-    map: new THREE.CanvasTexture(makeGlowCanvas()), transparent: true, opacity: 0.5,
-    depthWrite: false, blending: THREE.AdditiveBlending,
-  }));
-  halo.position.copy(heart.position);
-  halo.scale.set(6, 6, 1);
-  scene.add(halo);
-
-  // Ảnh xếp thành vòng tròn quanh trái tim
-  const ring = new THREE.Group();
-  const R = 5.6;
-  const photoMeshes = [];
   sources.forEach((src, i) => {
-    const mat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(1.75, 1.3), mat);
-    const theta = (i / sources.length) * Math.PI * 2;
-    mesh.position.set(R * Math.sin(theta), Math.sin(theta * 3) * 0.55, R * Math.cos(theta));
-    mesh.rotation.y = theta; // quay mặt ra ngoài vòng tròn
-    mesh.userData.src = src;
-    new THREE.TextureLoader().load(src,
-      (tex) => { mat.map = tex; mat.needsUpdate = true; },
-      undefined,
-      () => { mat.map = new THREE.CanvasTexture(makePlaceholderCanvas(i)); mat.needsUpdate = true; }
-    );
-    ring.add(mesh);
-    photoMeshes.push(mesh);
-  });
-  scene.add(ring);
-
-  // Kéo / vuốt để xoay, có quán tính; bấm để phóng to ảnh
-  const raycaster = new THREE.Raycaster();
-  const pointer = new THREE.Vector2();
-  const el = renderer.domElement;
-  let dragging = false, lastX = 0, vel = 0, rotY = 0, autoRotate = true, moved = 0;
-
-  el.addEventListener("pointerdown", (e) => {
-    dragging = true;
-    lastX = e.clientX;
-    moved = 0;
-    autoRotate = false;
-    el.setPointerCapture(e.pointerId);
-  });
-  el.addEventListener("pointermove", (e) => {
-    if (!dragging) return;
-    const dx = e.clientX - lastX;
-    lastX = e.clientX;
-    moved += Math.abs(dx);
-    rotY += dx * 0.006;
-    vel = dx * 0.006;
-  });
-  const endDrag = (e) => {
-    if (!dragging) return;
-    dragging = false;
-    setTimeout(() => { autoRotate = true; }, 2500);
-    if (moved < 8) { // coi là bấm → tìm ảnh bị bấm
-      const rect = el.getBoundingClientRect();
-      pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-      pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-      raycaster.setFromCamera(pointer, camera);
-      const hit = raycaster.intersectObjects(photoMeshes)[0];
-      if (hit) openLightbox(hit.object.userData.src);
-    }
-  };
-  el.addEventListener("pointerup", endDrag);
-  el.addEventListener("pointercancel", endDrag);
-
-  addEventListener("resize", () => {
-    const w = container.clientWidth || innerWidth;
-    const h = container.clientHeight || innerHeight * 0.6;
-    camera.aspect = w / Math.max(1, h);
-    camera.updateProjectionMatrix();
-    renderer.setSize(w, h);
-  });
-
-  let last = performance.now();
-  (function loop(now) {
-    requestAnimationFrame(loop);
-    if (currentScene !== "scene-gallery" || document.hidden) return; // chỉ render khi cần
-    const dt = Math.min(50, now - last);
-    last = now;
-    if (!dragging && autoRotate && !reduceMotion) rotY += dt * 0.00012;
-    if (!dragging && Math.abs(vel) > 0.0001) { rotY += vel; vel *= 0.95; }
-    ring.rotation.y = rotY;
-    // Trái tim đập nhẹ
-    const beat = 1 + 0.1 * Math.pow(Math.sin(now * 0.004), 2);
-    heart.scale.set(2.4 * beat, 2.4 * beat, 1);
-    halo.material.opacity = 0.35 + 0.15 * Math.sin(now * 0.004);
-    renderer.render(scene, camera);
-  })(performance.now());
-}
-
-// Phương án dự phòng: gallery ngang cuộn (khi Three.js/WebGL lỗi)
-function build2dGallery(container, sources) {
-  container.classList.add("gallery-2d");
-  sources.forEach((src) => {
+    const slide = document.createElement("figure");
+    slide.className = "gslide";
     const img = document.createElement("img");
     img.src = src;
     img.loading = "lazy";
-    img.alt = "Ảnh kỷ niệm";
-    img.addEventListener("click", () => openLightbox(src));
-    container.appendChild(img);
+    img.alt = "Ảnh kỷ niệm " + (i + 1);
+    img.draggable = false;
+    const ph = placeholderSrc(i);
+    img.addEventListener("error", () => { if (!img.src.startsWith("data:")) img.src = ph; });
+    slide.appendChild(img);
+    const cap = document.createElement("figcaption");
+    cap.textContent = (i + 1) + " / " + sources.length;
+    slide.appendChild(cap);
+    // Phân biệt cuộn và bấm: chỉ mở lightbox khi không cuộn
+    slide.addEventListener("pointerdown", () => { pointerStartScroll = container.scrollTop; });
+    slide.addEventListener("click", () => {
+      if (Math.abs(container.scrollTop - pointerStartScroll) < 10) openLightbox(i);
+    });
+    container.appendChild(slide);
+
+    // Chấm tiến trình
+    const dot = document.createElement("button");
+    dot.className = "gdot";
+    dot.type = "button";
+    dot.setAttribute("aria-label", "Ảnh " + (i + 1));
+    dot.addEventListener("click", () => container.scrollTo({ top: slide.offsetTop, behavior: "smooth" }));
+    dots.appendChild(dot);
+  });
+  if (dots.children[0]) dots.children[0].classList.add("on");
+
+  // Cập nhật chấm tiến trình khi cuộn
+  let ticking = false;
+  container.addEventListener("scroll", () => {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(() => {
+      const first = container.querySelector(".gslide");
+      const slideH = first ? first.offsetHeight : container.clientHeight;
+      const idx = Math.round(container.scrollTop / slideH);
+      [...dots.children].forEach((d, i) => d.classList.toggle("on", i === idx));
+      ticking = false;
+    });
   });
 }
 
 // ===================== LIGHTBOX =====================
-function openLightbox(src) {
-  $("#lightbox-img").src = src;
+let lbIndex = 0;
+
+function openLightbox(i) {
+  if (!lbSources.length) return;
+  lbIndex = ((i % lbSources.length) + lbSources.length) % lbSources.length;
+  $("#lightbox-img").src = lbSources[lbIndex];
   $("#lightbox").hidden = false;
 }
 function closeLightbox() {
@@ -810,8 +1006,15 @@ function closeLightbox() {
   $("#lightbox-img").src = "";
 }
 $("#lb-close").addEventListener("click", closeLightbox);
+$("#lb-prev").addEventListener("click", (e) => { e.stopPropagation(); openLightbox(lbIndex - 1); });
+$("#lb-next").addEventListener("click", (e) => { e.stopPropagation(); openLightbox(lbIndex + 1); });
 $("#lightbox").addEventListener("click", (e) => { if (e.target.id === "lightbox") closeLightbox(); });
-addEventListener("keydown", (e) => { if (e.key === "Escape") closeLightbox(); });
+addEventListener("keydown", (e) => {
+  if ($("#lightbox").hidden) return;
+  if (e.key === "Escape") closeLightbox();
+  if (e.key === "ArrowLeft") openLightbox(lbIndex - 1);
+  if (e.key === "ArrowRight") openLightbox(lbIndex + 1);
+});
 
 // ===================== 6. LỜI CHÚC (kiểu máy đánh chữ) =====================
 async function playWishes(token) {

@@ -54,17 +54,11 @@
   <section id="scene-cake" class="scene">
     <div class="cake-content">
       <h2 class="scene-title">Thổi nến thôi, <span class="name-accent" id="cake-name">bạn</span>!</h2>
-      <div class="cake-stage">
-        <div class="cake">
-          <div class="candle-row" id="candle-row"></div>
-          <div class="layer layer-top"><span class="icing"></span></div>
-          <div class="layer layer-mid"><span class="icing"></span></div>
-          <div class="layer layer-bottom"><span class="icing"></span></div>
-          <div class="plate"></div>
-        </div>
-      </div>
+      <div id="cake-3d" class="cake-3d"></div>
       <p id="mic-hint" class="hint"></p>
+      <p id="candle-count" class="candle-count"></p>
       <button id="btn-mic" class="btn-ghost" type="button">🎤 Cho phép micro thổi nến</button>
+      <button id="btn-relight" class="btn-ghost" type="button" hidden>🔥 Thắp lại nến</button>
       <button id="btn-cake-next" class="btn-ghost" type="button">Bỏ qua →</button>
       <p id="wish-reveal">✨ Điều ước của bạn sẽ thành hiện thực ✨</p>
     </div>
@@ -73,9 +67,10 @@
   <!-- 5. Vòng ảnh 3D -->
   <section id="scene-gallery" class="scene">
     <div class="gallery-content">
-      <h2 class="scene-title">Kỷ niệm cùng <span class="name-accent" id="gallery-name">bạn</span></h2>
-      <div id="gallery-3d" class="gallery-3d"></div>
-      <p class="scene-hint">Kéo để xoay • Bấm vào ảnh để phóng to</p>
+      <h2 class="scene-title">Chúc mừng sinh nhật <span class="name-accent" id="gallery-name">bạn</span></h2>
+      <div id="gallery-scroll" class="gallery-scroll"></div>
+      <div id="gallery-dots" class="gallery-dots" aria-hidden="true"></div>
+      <p class="scene-hint">Vuốt lên / xuống để xem ảnh • Bấm ảnh để phóng to</p>
       <button id="btn-gallery-next" class="btn-primary" type="button">Tiếp tục →</button>
     </div>
   </section>
@@ -118,7 +113,9 @@
   <!-- Lightbox phóng to ảnh -->
   <div id="lightbox" class="lightbox" hidden>
     <button id="lb-close" class="lb-close" type="button" aria-label="Đóng ảnh">✕</button>
+    <button id="lb-prev" class="lb-nav lb-prev" type="button" aria-label="Ảnh trước">‹</button>
     <img id="lightbox-img" alt="Ảnh kỷ niệm phóng to" />
+    <button id="lb-next" class="lb-nav lb-next" type="button" aria-label="Ảnh sau">›</button>
   </div>
 
   <script src="script.js"></script>

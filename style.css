@@ -1,0 +1,507 @@
+/* ============================================================
+   WEBSITE CHÚC MỪNG SINH NHẬT — Phong cách đêm xanh tím, hồng - vàng ánh kim
+   ============================================================ */
+
+/* ---------- Biến CSS: màu sắc & font ---------- */
+:root {
+  --bg-deep: #0b0620;
+  --bg-mid: #1a0f3c;
+  --bg-soft: #2a1656;
+  --pink: #ff5fa2;
+  --pink-soft: #ff8fc7;
+  --gold: #ffd166;
+  --gold-soft: #ffe9a8;
+  --lav: #8e6cf0;
+  --text: #f6f1ff;
+  --text-dim: #c9bde6;
+  --font-hand: "Great Vibes", "Be Vietnam Pro", cursive;
+  --font-body: "Be Vietnam Pro", system-ui, sans-serif;
+  --glow-pink: 0 0 20px rgba(255, 95, 162, 0.55);
+  --glow-gold: 0 0 24px rgba(255, 209, 102, 0.55);
+}
+
+/* ---------- Reset & base ---------- */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body { height: 100%; }
+
+body {
+  font-family: var(--font-body);
+  color: var(--text);
+  background: radial-gradient(120% 100% at 50% 0%, var(--bg-soft) 0%, var(--bg-mid) 45%, var(--bg-deep) 100%);
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+img { max-width: 100%; display: block; }
+
+button { font-family: inherit; }
+
+:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+/* ---------- Nền sao ---------- */
+#bg-stars {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* ---------- Các cảnh (scene) ---------- */
+.scene {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  opacity: 0;
+  visibility: hidden;
+  transform: scale(1.04);
+  transition: opacity 0.7s ease, transform 0.7s ease, visibility 0s linear 0.7s;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.scene.active {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+
+/* ---------- Nút bấm (tối thiểu 44px) ---------- */
+.btn-primary {
+  min-height: 48px;
+  padding: 14px 34px;
+  border: none;
+  border-radius: 999px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #2a1030;
+  background: linear-gradient(120deg, var(--pink), var(--gold));
+  box-shadow: var(--glow-pink), inset 0 0 12px rgba(255, 255, 255, 0.35);
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.btn-primary:hover { transform: translateY(-2px) scale(1.03); box-shadow: 0 0 34px rgba(255, 95, 162, 0.7); }
+.btn-primary:active { transform: scale(0.97); }
+
+.btn-ghost {
+  min-height: 44px;
+  padding: 12px 22px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+}
+.btn-ghost:hover { background: rgba(255, 255, 255, 0.16); }
+.btn-ghost:active { transform: scale(0.97); }
+
+/* ---------- Nút nhạc ---------- */
+.music-toggle {
+  position: fixed;
+  top: 14px;
+  right: 14px;
+  z-index: 50;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(42, 22, 86, 0.6);
+  backdrop-filter: blur(8px);
+  font-size: 1.3rem;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+}
+.music-toggle:hover { transform: scale(1.08); }
+.music-toggle.on { box-shadow: var(--glow-gold); }
+.music-toggle:disabled { opacity: 0.5; cursor: wait; }
+
+/* ---------- Tiêu đề cảnh ---------- */
+.scene-title {
+  font-family: var(--font-hand);
+  font-size: clamp(2rem, 7vw, 3.4rem);
+  font-weight: 400;
+  text-align: center;
+  text-shadow: 0 0 18px rgba(255, 143, 199, 0.45);
+  margin-bottom: 20px;
+}
+.name-accent { color: var(--pink-soft); }
+.scene-hint { color: var(--text-dim); font-size: 0.9rem; text-align: center; }
+.hint { color: var(--text-dim); min-height: 1.5em; text-align: center; font-size: 0.95rem; }
+.floating-hint {
+  position: absolute;
+  bottom: 26px;
+  left: 0;
+  right: 0;
+  animation: hintPulse 2s ease-in-out infinite;
+}
+@keyframes hintPulse { 50% { opacity: 0.45; } }
+
+/* ---------- 1. Mở đầu ---------- */
+.intro-content {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+.intro-kicker {
+  font-size: clamp(1rem, 3.5vw, 1.3rem);
+  color: var(--text-dim);
+  letter-spacing: 0.08em;
+}
+.intro-name {
+  font-family: var(--font-hand);
+  font-weight: 400;
+  font-size: clamp(3.4rem, 14vw, 7rem);
+  line-height: 1.1;
+  background: linear-gradient(120deg, var(--pink-soft), var(--gold));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 22px rgba(255, 95, 162, 0.5));
+  animation: nameFloat 3.2s ease-in-out infinite alternate;
+}
+@keyframes nameFloat { to { transform: translateY(-10px); } }
+.intro-sub { color: var(--gold-soft); font-size: clamp(0.95rem, 3vw, 1.15rem); }
+
+/* ---------- 2. Đếm ngược ---------- */
+.countdown-num {
+  font-family: var(--font-hand);
+  font-size: clamp(9rem, 32vw, 16rem);
+  color: var(--gold);
+  text-shadow: var(--glow-gold);
+}
+.countdown-num.pop { animation: countPop 0.85s ease-out both; }
+@keyframes countPop {
+  0%   { transform: scale(0.2); opacity: 0; }
+  35%  { transform: scale(1.15); opacity: 1; }
+  70%  { transform: scale(1); opacity: 1; }
+  100% { transform: scale(1.05); opacity: 0; }
+}
+
+/* ---------- 3. Hạt & pháo hoa ---------- */
+#fx-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  will-change: transform;
+}
+
+/* ---------- 4. Bánh kem & nến ---------- */
+.cake-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+.cake-stage {
+  position: relative;
+  width: min(84vw, 360px);
+  margin-top: 6vh;
+}
+.cake-stage::after { /* ánh sáng ấm dưới bánh */
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -30px;
+  width: 120%;
+  height: 40px;
+  transform: translateX(-50%);
+  background: radial-gradient(ellipse at center, rgba(255, 209, 102, 0.35), transparent 70%);
+  pointer-events: none;
+}
+.cake { display: flex; flex-direction: column; align-items: center; }
+.candle-row {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  margin-bottom: -26px; /* cắm nến vào bánh */
+}
+.layer { position: relative; border-radius: 12px 12px 10px 10px; }
+.layer::before { /* lớp kem trắng viền scallop */
+  content: "";
+  position: absolute;
+  top: -9px;
+  left: -2%;
+  width: 104%;
+  height: 24px;
+  background:
+    radial-gradient(circle at 12px 14px, #fff 11px, rgba(255, 255, 255, 0) 12px) 0 0 / 24px 24px repeat-x,
+    linear-gradient(#fff, #fff) 0 0 / 100% 9px no-repeat;
+}
+.layer-top    { width: 56%; height: 56px; background: linear-gradient(160deg, var(--gold-soft), var(--gold)); }
+.layer-mid    { width: 78%; height: 70px; background: linear-gradient(160deg, var(--pink-soft), var(--pink)); margin-top: -2px; }
+.layer-bottom { width: 100%; height: 86px; background: linear-gradient(160deg, var(--lav), #5b3aa8); margin-top: -2px; }
+.plate {
+  width: 112%;
+  height: 16px;
+  border-radius: 50%;
+  background: linear-gradient(#e8e2f7, #9d8fc7);
+  margin-top: -6px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
+}
+
+/* Nến — là button để bấm tắt (phương án dự phòng) */
+.candle {
+  position: relative;
+  width: 44px;
+  min-height: 44px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0;
+}
+.stick {
+  width: 10px;
+  height: 34px;
+  border-radius: 3px;
+  background: repeating-linear-gradient(45deg, var(--pink) 0 5px, #fff 5px 10px);
+  box-shadow: 0 0 8px rgba(255, 95, 162, 0.35);
+}
+.wick { position: absolute; bottom: 30px; width: 2px; height: 6px; background: #3a2b12; }
+.flame {
+  position: absolute;
+  bottom: 34px;
+  width: 16px;
+  height: 20px;
+  border-radius: 50% 50% 50% 50% / 62% 62% 38% 38%;
+  background: radial-gradient(circle at 50% 70%, #fff7cc 0%, var(--gold) 35%, #ff9d5c 65%, rgba(255, 95, 162, 0) 100%);
+  box-shadow: 0 0 18px 6px rgba(255, 209, 102, 0.55);
+  transform-origin: 50% 90%;
+  animation: flicker 0.18s ease-in-out infinite alternate;
+}
+@keyframes flicker { from { transform: scale(1) rotate(-2.5deg); } to { transform: scale(1.12) rotate(2.5deg); } }
+.smoke {
+  position: absolute;
+  bottom: 40px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: rgba(200, 200, 210, 0.7);
+  filter: blur(3px);
+  opacity: 0;
+}
+.candle.out .flame, .candle.out .wick { opacity: 0; animation: none; }
+.candle.out .smoke { animation: smokeRise 1.6s ease-out forwards; }
+@keyframes smokeRise {
+  0%   { opacity: 0.8; transform: translateY(0) scale(0.6); }
+  100% { opacity: 0; transform: translateY(-70px) scale(2.2); }
+}
+
+#wish-reveal {
+  font-family: var(--font-hand);
+  font-size: clamp(1.6rem, 6vw, 2.6rem);
+  color: var(--gold-soft);
+  text-align: center;
+  text-shadow: var(--glow-gold);
+  opacity: 0;
+  transform: scale(0.7);
+  transition: opacity 0.8s cubic-bezier(0.2, 1.4, 0.4, 1), transform 0.8s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+#wish-reveal.show { opacity: 1; transform: scale(1); }
+
+/* ---------- 5. Vòng ảnh 3D ---------- */
+.gallery-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  gap: 12px;
+}
+.gallery-3d { position: relative; flex: 1; width: 100%; min-height: 0; touch-action: none; }
+.gallery-3d canvas { display: block; }
+.gallery-2d { display: flex; gap: 12px; overflow-x: auto; padding: 12px; align-items: center; }
+.gallery-2d img {
+  height: 180px;
+  border-radius: 12px;
+  object-fit: cover;
+  flex: none;
+  box-shadow: 0 0 16px rgba(255, 95, 162, 0.3);
+  cursor: pointer;
+}
+
+/* ---------- 6. Lời chúc ---------- */
+.wishes-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  max-width: 680px;
+  text-align: center;
+}
+#wishes-list { display: flex; flex-direction: column; gap: 16px; }
+.wish-line {
+  font-size: clamp(1.15rem, 4vw, 1.6rem);
+  font-weight: 300;
+  color: var(--text);
+  text-shadow: 0 0 12px rgba(255, 255, 255, 0.25);
+  min-height: 1.6em;
+}
+.wish-line:last-child::after {
+  content: "▌";
+  color: var(--gold);
+  animation: blink 1s steps(1) infinite;
+}
+@keyframes blink { 50% { opacity: 0; } }
+
+/* Đèn lồng bay nhẹ */
+.lanterns { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.lanterns .lantern {
+  position: absolute;
+  width: 46px;
+  height: 60px;
+  border-radius: 50% 50% 44% 44%;
+  background: radial-gradient(circle at 50% 32%, #fff3c4 0%, #ffb347 45%, var(--pink) 100%);
+  box-shadow: 0 0 26px rgba(255, 179, 71, 0.55);
+  opacity: 0.9;
+  animation: lanternFloat 6s ease-in-out infinite alternate;
+}
+.lanterns .lantern::before,
+.lanterns .lantern::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 14px;
+  height: 8px;
+  border-radius: 3px;
+  background: var(--lav);
+}
+.lanterns .lantern::before { top: -5px; }
+.lanterns .lantern::after { bottom: -5px; }
+@keyframes lanternFloat {
+  from { transform: translateY(0) rotate(-2deg); }
+  to   { transform: translateY(-26px) rotate(2deg); }
+}
+
+/* ---------- 7. Thư tay ---------- */
+.letter-paper {
+  width: 100%;
+  max-width: 620px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 20px;
+  padding: clamp(24px, 5vw, 48px);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 0 40px rgba(124, 92, 191, 0.25);
+  transform: rotate(-0.6deg);
+}
+#letter-lines p {
+  font-size: clamp(1.05rem, 3.6vw, 1.35rem);
+  font-weight: 300;
+  color: var(--text);
+  margin: 0 0 14px;
+  opacity: 0;
+  animation: lineIn 0.8s ease forwards;
+}
+@keyframes lineIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+#letter-signature {
+  font-family: var(--font-hand);
+  font-size: clamp(2rem, 7vw, 3rem);
+  color: var(--pink-soft);
+  text-align: right;
+  opacity: 0;
+  position: relative;
+  margin-top: 10px;
+}
+#letter-signature.write { animation: lineIn 0.9s ease forwards; }
+#letter-signature.write::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -6px;
+  height: 2px;
+  background: linear-gradient(90deg, var(--pink), transparent);
+  transform-origin: left;
+  animation: underline 1s 0.4s ease forwards;
+}
+@keyframes underline { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+/* ---------- 8. Kết ---------- */
+.end-content {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+}
+.end-title {
+  font-family: var(--font-hand);
+  font-weight: 400;
+  font-size: clamp(3rem, 12vw, 6rem);
+  background: linear-gradient(120deg, var(--pink-soft), var(--gold));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 24px rgba(255, 209, 102, 0.45));
+}
+.end-sub { color: var(--text-dim); font-size: clamp(1rem, 3.5vw, 1.2rem); }
+.end-credit { color: var(--text-dim); font-size: 0.95rem; }
+
+/* ---------- Lightbox ---------- */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(5, 2, 15, 0.92);
+  backdrop-filter: blur(6px);
+}
+.lightbox[hidden] { display: none; }
+.lightbox img {
+  max-width: 92vw;
+  max-height: 82vh;
+  border-radius: 14px;
+  box-shadow: 0 0 50px rgba(255, 95, 162, 0.4);
+}
+.lb-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(42, 22, 86, 0.7);
+  color: #fff;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+/* ---------- Responsive: máy tính bảng & desktop ---------- */
+@media (min-width: 768px) {
+  .scene { padding: 40px; }
+  .gallery-2d img { height: 240px; }
+}
+@media (min-width: 1280px) {
+  .intro-name { font-size: 8rem; }
+  .end-title { font-size: 7rem; }
+}
+
+/* ---------- Giảm chuyển động (accessibility) ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b0620" />
+  <meta name="description" content="Website chúc mừng sinh nhật — lời chúc, ảnh kỷ niệm và nhạc nền lung linh" />
+  <title>🎂 Chúc mừng sinh nhật</title>
+
+  <!-- Font: viết tay (Great Vibes) + sans hỗ trợ tiếng Việt đầy đủ (Be Vietnam Pro) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;600;800&family=Great+Vibes&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- Thư viện CDN (chọn nhẹ): GSAP chuyển cảnh, canvas-confetti pháo giấy -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js" defer></script>
+  <!-- Import map để dùng Three.js dạng ES module (vòng ảnh 3D) -->
+  <script type="importmap">
+    { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
+  </script>
+</head>
+<body>
+  <!-- Nền sao lấp lánh chạy suốt các cảnh -->
+  <canvas id="bg-stars" aria-hidden="true"></canvas>
+
+  <!-- Nút bật/tắt nhạc nền (cố định, tối thiểu 44px) -->
+  <button id="music-toggle" class="music-toggle" type="button" aria-label="Bật/tắt nhạc nền" aria-pressed="false" disabled>🔇</button>
+
+  <!-- 1. Màn hình mở đầu -->
+  <section id="scene-intro" class="scene active">
+    <div class="intro-content">
+      <p class="intro-kicker">✨ Có một món quà dành cho ✨</p>
+      <h1 class="intro-name" id="intro-name">TÊN BẠN</h1>
+      <p class="intro-sub" id="intro-date"></p>
+      <button id="btn-open" class="btn-primary" type="button">🎁 Mở quà</button>
+    </div>
+  </section>
+
+  <!-- 2. Đếm ngược 3 - 2 - 1 -->
+  <section id="scene-countdown" class="scene">
+    <div id="countdown-num" class="countdown-num" aria-live="polite">3</div>
+  </section>
+
+  <!-- 3. Hạt sáng xếp chữ + pháo hoa -->
+  <section id="scene-particles" class="scene" data-skip>
+    <canvas id="fx-canvas" aria-hidden="true"></canvas>
+    <p class="scene-hint floating-hint">Bấm để tiếp tục ✨</p>
+  </section>
+
+  <!-- 4. Bánh kem & thổi nến -->
+  <section id="scene-cake" class="scene">
+    <div class="cake-content">
+      <h2 class="scene-title">Thổi nến thôi, <span class="name-accent" id="cake-name">bạn</span>!</h2>
+      <div class="cake-stage">
+        <div class="cake">
+          <div class="candle-row" id="candle-row"></div>
+          <div class="layer layer-top"><span class="icing"></span></div>
+          <div class="layer layer-mid"><span class="icing"></span></div>
+          <div class="layer layer-bottom"><span class="icing"></span></div>
+          <div class="plate"></div>
+        </div>
+      </div>
+      <p id="mic-hint" class="hint"></p>
+      <button id="btn-mic" class="btn-ghost" type="button">🎤 Cho phép micro thổi nến</button>
+      <button id="btn-cake-next" class="btn-ghost" type="button">Bỏ qua →</button>
+      <p id="wish-reveal">✨ Điều ước của bạn sẽ thành hiện thực ✨</p>
+    </div>
+  </section>
+
+  <!-- 5. Vòng ảnh 3D -->
+  <section id="scene-gallery" class="scene">
+    <div class="gallery-content">
+      <h2 class="scene-title">Kỷ niệm cùng <span class="name-accent" id="gallery-name">bạn</span></h2>
+      <div id="gallery-3d" class="gallery-3d"></div>
+      <p class="scene-hint">Kéo để xoay • Bấm vào ảnh để phóng to</p>
+      <button id="btn-gallery-next" class="btn-primary" type="button">Tiếp tục →</button>
+    </div>
+  </section>
+
+  <!-- 6. Lời chúc (kiểu máy đánh chữ) -->
+  <section id="scene-wishes" class="scene" data-skip>
+    <div class="lanterns" aria-hidden="true">
+      <span class="lantern" style="left:6%;  bottom:10%; animation-delay:0s"></span>
+      <span class="lantern" style="left:20%; bottom:26%; animation-delay:1.2s"></span>
+      <span class="lantern" style="left:74%; bottom:14%; animation-delay:.6s"></span>
+      <span class="lantern" style="left:88%; bottom:30%; animation-delay:1.8s"></span>
+      <span class="lantern" style="left:44%; bottom:6%;  animation-delay:2.4s"></span>
+      <span class="lantern" style="left:60%; bottom:22%; animation-delay:.9s"></span>
+    </div>
+    <div class="wishes-content">
+      <h2 class="scene-title">Lời chúc dành cho bạn 💌</h2>
+      <div id="wishes-list"></div>
+      <p class="scene-hint">Bấm để tiếp tục</p>
+    </div>
+  </section>
+
+  <!-- 7. Thư tay -->
+  <section id="scene-letter" class="scene" data-skip>
+    <div class="letter-paper">
+      <div id="letter-lines"></div>
+      <p id="letter-signature"></p>
+    </div>
+  </section>
+
+  <!-- 8. Kết -->
+  <section id="scene-end" class="scene">
+    <div class="end-content">
+      <h1 class="end-title">Happy Birthday!</h1>
+      <p class="end-sub">Chúc bạn tuổi mới thật nhiều niềm vui 🎉</p>
+      <button id="btn-replay" class="btn-primary" type="button">⟲ Xem lại từ đầu</button>
+      <p class="end-credit">Made with ❤️ by <span id="end-sender"></span></p>
+    </div>
+  </section>
+
+  <!-- Lightbox phóng to ảnh -->
+  <div id="lightbox" class="lightbox" hidden>
+    <button id="lb-close" class="lb-close" type="button" aria-label="Đóng ảnh">✕</button>
+    <img id="lightbox-img" alt="Ảnh kỷ niệm phóng to" />
+  </div>
+
+  <script src="script.js"></script>
+  <!-- Kiểm tra lỗi: nếu script không chạy được (mở file:// bị chặn module, CDN lỗi...) thì báo hướng dẫn -->
+  <script>
+    window.__appReady = false;
+    setTimeout(function () {
+      if (window.__appReady) return;
+      var banner = document.createElement("div");
+      banner.style.cssText = "position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:999;max-width:92vw;background:rgba(42,22,86,.97);color:#f6f1ff;border:1px solid #ffd166;border-radius:14px;padding:16px 18px;font:14px/1.5 'Be Vietnam Pro',sans-serif;box-shadow:0 0 30px rgba(255,209,102,.4);text-align:center";
+      banner.innerHTML = "⚠️ Trang chưa khởi động được.<br>Hãy mở qua <b>GitHub Pages</b> hoặc chạy server local:<br><code style='color:#ffd166'>npx serve</code> hoặc <code style='color:#ffd166'>python -m http.server</code><br>rồi truy cập <code style='color:#ffd166'>http://localhost:3000</code>";
+      document.body.appendChild(banner);
+    }, 3000);
+  </script>
+</body>
+</html>

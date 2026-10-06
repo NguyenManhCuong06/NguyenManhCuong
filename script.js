@@ -17,19 +17,19 @@ const CONFIG = {
   ],
   letter: [                         // Thư tay ngắn — mỗi phần tử là một dòng
     "Tuổi mới phải trưởng thành hơn nhé,",
-    "chúc bạn có 1 ngày thật tuyệt vời nha.",
+    "chúc cô có 1 ngày thật tuyệt vời nha.",
     "Mong cô nhận được nhiều lời chúc từ mọi người xung quanh,",
     "nếu có vấn đề đừng buồn tui nha tu code gà lắm. 🌸",
     "Bước sang tuổi mới rồi bớt bắt nạt em nha,",
     "chịu khó để ý thằng này 1 tý.",
   ],
   images: [                         // 6–10 ảnh trong assets/images (tên không dấu, không khoảng trắng)
-    "assets/images/1.jpg",
-    "assets/images/2.jpg",
-    "assets/images/3.jpg",
-    "assets/images/4.jpg",
+    "assets/images/photo-1.jpg",
+    "assets/images/photo-2.jpg",
+    "assets/images/photo-3.jpg",
+    "assets/images/photo-4.jpg",
   ],
-  music: "",                        // Đường dẫn file mp3, vd: "assets/audio/birthday.mp3". Để trống sẽ phát nhạc nền nhẹ tự tạo.
+  music: "",                        // Đường dẫn file mp3, vd: "assets/audio/birthday.mp3". Để trống sẽ tự chơi nhạc "Happy Birthday" (public domain).
 };
 
 // ===================== TIỆN ÍCH & PHÁT HIỆN THIẾT BỊ =====================
@@ -110,8 +110,13 @@ const Music = {
   timer: null,
   noteIdx: 0,
   playing: false,
-  // Giai điệu nhẹ nhàng dùng khi chưa có file mp3 (Web Audio)
-  melody: [523.25, 659.25, 783.99, 1046.5, 783.99, 659.25, 523.25, 392.0],
+  // Giai điệu "Happy Birthday" (public domain) — mỗi nốt: [tần số Hz, độ dài beat]
+  melody: [
+    [392.00, 0.75], [392.00, 0.25], [440.00, 1], [392.00, 1], [523.25, 1], [493.88, 2],
+    [392.00, 0.75], [392.00, 0.25], [440.00, 1], [392.00, 1], [587.33, 1], [523.25, 2],
+    [392.00, 0.75], [392.00, 0.25], [783.99, 1], [659.25, 1], [523.25, 1], [493.88, 1], [440.00, 2],
+    [698.46, 0.75], [698.46, 0.25], [659.25, 1], [523.25, 1], [587.33, 1], [523.25, 2],
+  ],
   async start() {
     if (this.playing) return;
     if (CONFIG.music) {
@@ -137,22 +142,37 @@ const Music = {
       return; // thiết bị không hỗ trợ Web Audio
     }
     this.playing = true;
+    const BEAT = 0.42; // giây mỗi nốt
     const playNote = () => {
       if (!this.playing) return;
-      const f = this.melody[this.noteIdx % this.melody.length];
+      const [f, beats] = this.melody[this.noteIdx % this.melody.length];
       this.noteIdx++;
       const t = this.ctx.currentTime;
+      const dur = beats * BEAT;
+      // Nốt chính (sine mềm)
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
       osc.type = "sine";
       osc.frequency.value = f;
       gain.gain.setValueAtTime(0, t);
-      gain.gain.linearRampToValueAtTime(0.12, t + 0.05);
-      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.9);
+      gain.gain.linearRampToValueAtTime(0.12, t + 0.04);
+      gain.gain.setValueAtTime(0.12, t + Math.max(0.05, dur - 0.15));
+      gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
       osc.connect(gain).connect(this.ctx.destination);
       osc.start(t);
-      osc.stop(t + 1);
-      this.timer = setTimeout(playNote, 420);
+      osc.stop(t + dur);
+      // Họa âm nhẹ một quãng tám dưới cho ấm hơn
+      const osc2 = this.ctx.createOscillator();
+      const gain2 = this.ctx.createGain();
+      osc2.type = "triangle";
+      osc2.frequency.value = f / 2;
+      gain2.gain.setValueAtTime(0, t);
+      gain2.gain.linearRampToValueAtTime(0.04, t + 0.06);
+      gain2.gain.exponentialRampToValueAtTime(0.001, t + dur);
+      osc2.connect(gain2).connect(this.ctx.destination);
+      osc2.start(t);
+      osc2.stop(t + dur);
+      this.timer = setTimeout(playNote, dur * 1000);
     };
     playNote();
   },

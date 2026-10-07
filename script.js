@@ -965,9 +965,20 @@ function showSecret() {
 $("#secret-btn").addEventListener("click", showSecret);
 $("#toast-close").addEventListener("click", () => { $("#secret-toast").hidden = true; });
 
-// Gõ "love" trên bàn phím → lời chúc bí mật; phím tắt lightbox
+// Trên điện thoại: gõ trong ô nhập cuối trang (để mở bàn phím)
+const secretInput = $("#secret-input");
+secretInput.addEventListener("input", () => {
+  if (secretInput.value.toLowerCase().slice(-4) === "love") {
+    showSecret();
+    secretInput.value = "";
+    secretInput.blur();
+  }
+});
+
+// Trên máy tính: gõ "love" ở bất cứ đâu → lời chúc bí mật; phím tắt lightbox
 let keyBuf = "";
 addEventListener("keydown", (e) => {
+  if (e.target === secretInput) return; // ô nhập đã xử lý riêng ở trên
   keyBuf = (keyBuf + e.key.toLowerCase()).slice(-4);
   if (keyBuf === "love") showSecret();
   if (lbIndex !== null) {

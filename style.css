@@ -443,6 +443,23 @@ main { position: relative; z-index: 1; }
 .made { margin-top: 2rem; color: var(--ink-soft); }
 .footer .hint { margin-top: 0.25rem; font-size: 0.75rem; color: rgb(107 74 105 / 0.7); }
 
+/* Ô gõ từ bí mật (mobile — mở bàn phím) */
+.secret-input {
+  display: block;
+  margin: 0.75rem auto 0;
+  width: min(72vw, 280px);
+  min-height: 2.75rem;
+  border-radius: 999px;
+  border: 1px solid rgb(58 29 59 / 0.2);
+  background: rgb(255 255 255 / 0.6);
+  padding: 0 1.25rem;
+  font-family: inherit;
+  font-size: 0.875rem;
+  color: var(--ink);
+  text-align: center;
+}
+.secret-input::placeholder { color: rgb(107 74 105 / 0.55); }
+
 /* ===== NÚT NHẠC ===== */
 .music-toggle {
   position: fixed; right: 1rem; bottom: 1rem; z-index: 55;

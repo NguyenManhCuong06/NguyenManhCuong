@@ -11,7 +11,7 @@ Website sinh nhật single-page, theme pastel sáng, mobile-first. Web tĩnh (kh
 - Không có WebGL → tự động chuyển bánh dự phòng (DOM/CSS)
 - Lời chúc card, timeline kỷ niệm (2 cột xen kẽ trên desktop), thư viện ảnh masonry + lightbox (phóng to, ←/→, Esc)
 - Lá thư viết dần từng dòng trên nền giấy kẻ, nút ✦ bật lời chúc bí mật
-- Easter egg: gõ "love" trên bàn phím → lời chúc bí mật + pháo giấy
+- Easter egg: gõ "love" (trên điện thoại: gõ vào ô nhập cuối trang; trên máy tính: gõ ở bất cứ đâu) → lời chúc bí mật + pháo giấy
 - Nền lấp lánh, nút nhạc góc dưới phải, nút "Phát lại hiệu ứng"
 - Hỗ trợ `prefers-reduced-motion`, lazy-load ảnh, chỉ tải Three.js khi cuộn tới phần bánh kem
 
